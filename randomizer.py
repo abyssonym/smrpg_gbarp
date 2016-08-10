@@ -18,7 +18,59 @@ class StatObject:
         return self.index % 5
 
 
-class MonsterObject(TableObject): pass
+class MonsterObject(TableObject):
+    flag = "m"
+    flag_description = "enemies"
+    mutate_attributes = {
+        "hp": (1, 32000),
+        "speed": None,
+        "attack": None,
+        "defense": None,
+        "magic_attack": None,
+        "magic_defense": None,
+        "fp": None,
+        "evade": None,
+        "magic_evade": None
+        }
+    intershuffle_attributes = [
+            "hp", "speed", "attack", "defense", "magic_attack",
+            "magic_defense", "fp", "evade", "magic_evade", "resistances",
+            "immunities", "weaknesses_approach", "coin_anim_entrance",
+        ]
+
+    @property
+    def rank(self):
+        hp = self.hp if self.hp >= 10 else 100
+        return hp * max(self.attack, self.magic_attack, 1)
+
+    @property
+    def intershuffle_valid(self):
+        return not self.is_boss and self.rank >= 550
+
+    @property
+    def is_boss(self):
+        return self.hit_special_defense & 0x02
+
+    @classmethod
+    def intershuffle(cls):
+        super(MonsterObject, cls).intershuffle()
+        valid = [m for m in cls.every if m.intershuffle_valid]
+        hitspecs = [m.hit_special_defense & 0xFC for m in valid]
+        random.shuffle(hitspecs)
+        for hs, m in zip(hitspecs, valid):
+            m.hit_special_defense = (m.hit_special_defense & 0x03) | hs
+
+    def mutate(self):
+        oldstats = {}
+        for key in self.mutate_attributes:
+            oldstats[key] = getattr(self, key)
+        super(MonsterObject, self).mutate()
+        if self.is_boss:
+            for (attr, oldval) in oldstats.items():
+                if getattr(self, attr) < oldval:
+                    setattr(self, attr, oldval)
+
+
 class MonsterAttackObject(TableObject): pass
 class MonsterRewardObject(TableObject): pass
 class PackObject(TableObject): pass
@@ -47,10 +99,8 @@ if __name__ == "__main__":
         numify = lambda x: "{0: >3}".format(x)
         minmax = lambda x: (min(x), max(x))
         clean_and_write(ALL_OBJECTS)
-        rewrite_snes_meta("SMRPG-R", VERSION, megabits=24, lorom=True)
+        rewrite_snes_meta("SMRPG-R", VERSION, megabits=32, lorom=True)
         finish_interface()
-        for w in WeaponTimingObject.every:
-            print "%x" % w.index, " ".join(map(hexify, w.timings))
         import pdb; pdb.set_trace()
     except Exception, e:
         print "ERROR: %s" % e
