@@ -12,13 +12,27 @@ VERSION = 1
 ALL_OBJECTS = None
 
 
+class StatObject:
+    @property
+    def character_id(self):
+        return self.index % 5
+
+
 class MonsterObject(TableObject): pass
 class MonsterAttackObject(TableObject): pass
 class MonsterRewardObject(TableObject): pass
+class PackObject(TableObject): pass
+class FormationObject(TableObject): pass
 class CharacterObject(TableObject): pass
 class ItemObject(TableObject): pass
+class LevelUpXPObject(TableObject): pass
+class StatGrowthObject(StatObject, TableObject): pass
+class StatBonusObject(StatObject, TableObject): pass
 class SpellObject(TableObject): pass
+class LearnObject(TableObject): pass
+class WeaponTimingObject(TableObject): pass
 class ShopObject(TableObject): pass
+class FlowerBonusObject(TableObject): pass
 
 
 if __name__ == "__main__":
@@ -35,6 +49,8 @@ if __name__ == "__main__":
         clean_and_write(ALL_OBJECTS)
         rewrite_snes_meta("SMRPG-R", VERSION, megabits=24, lorom=True)
         finish_interface()
+        for w in WeaponTimingObject.every:
+            print "%x" % w.index, " ".join(map(hexify, w.timings))
         import pdb; pdb.set_trace()
     except Exception, e:
         print "ERROR: %s" % e

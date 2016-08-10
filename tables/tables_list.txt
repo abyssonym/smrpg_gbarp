@@ -1,9 +1,18 @@
 # objname tablefile address count grouped
-#EventObject         event_table.txt             2f920   107     pointed 2f9f8   2
-MonsterObject       monster_table.txt           390226  256
+MonsterObject       monster_table.txt           390026  256     point1  390000  2
 MonsterAttackObject monster_attack_table.txt    391226  129
-MonsterRewardObject monster_reward_table.txt    39162a  256
+MonsterRewardObject monster_reward_table.txt    39142a  256     point1  390000  2
+#MonsterAIObject     monster_ai_table.txt        3930aa  256
+PackObject          pack_table.txt              39222a  248
+#PsychopathObject    psychopath_table.txt        399fd1  256     pointed 390000  2
+FormationObject     formation_table.txt         39c000  512
 CharacterObject     character_table.txt         3a002c  5
 ItemObject          item_table.txt              3a014d  256
+LevelUpXPObject     level_up_xp_table.txt       3a1aff  29
+StatGrowthObject    stat_growth_table.txt       3a1b39  145
+StatBonusObject     stat_bonus_table.txt        3a1cec  145
 SpellObject         spell_table.txt             3a20f1  128
+LearnObject         learn_table.txt             3a42f5  145
+WeaponTimingObject  weapon_timing_table.txt     3a438a  37
 ShopObject          shop_table.txt              3a44df  33
+FlowerBonusObject   flower_bonus_table.txt      39bb44  256
