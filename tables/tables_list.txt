@@ -1,0 +1,3 @@
+# objname tablefile address count grouped
+#EventObject         event_table.txt             2f920   107     pointed 2f9f8   2
+MonsterObject       monster_table.txt           390226  242
