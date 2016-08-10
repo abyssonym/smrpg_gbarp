@@ -5,6 +5,7 @@ from randomtools.utils import (
 from randomtools.interface import (
     get_outfile, get_seed, get_flags, run_interface, rewrite_snes_meta,
     clean_and_write, finish_interface)
+from collections import defaultdict
 from os import path
 
 
@@ -82,7 +83,6 @@ class PackObject(TableObject): pass
 class FormationObject(TableObject): pass
 class CharacterObject(TableObject):
     def cleanup(self):
-        self.known_spells = 0
         my_learned = [l for l in LearnObject.every if l.level <= self.level
                       and l.character_id == self.index]
         for l in my_learned:
@@ -101,6 +101,39 @@ class LearnObject(CharIndexObject, TableObject):
     @property
     def level(self):
         return (self.index / 5) + 2
+
+    @property
+    def rank(self):
+        return self.level
+
+    @classmethod
+    def full_randomize(cls):
+        if hasattr(cls, "after_order"):
+            for cls2 in cls.after_order:
+                if not (hasattr(cls2, "randomized") and cls2.randomized):
+                    raise Exception("Randomize order violated.")
+        for c in CharacterObject.every:
+            c.known_spells = 0
+        spells = range(0x1b)
+        random.shuffle(spells)
+        supplemental = random.sample(spells, 3)
+        spells = spells + supplemental
+        charspells = defaultdict(list)
+        while spells:
+            valid = [i for i in range(5) if len(charspells[i]) < 6]
+            chosen = random.choice(valid)
+            charspells[chosen].append(spells.pop())
+        for l in LearnObject.every:
+            l.spell = 0xFF
+        for i in range(5):
+            charlevels = sorted(random.sample(range(2, 20), 5))
+            spells = charspells[i]
+            c = CharacterObject.get(i)
+            c.known_spells |= (1 << spells[-1])
+            for l, s in zip(charlevels, spells[:-1]):
+                l = LearnObject.get_by_character(i, l-2)
+                l.spell = s
+        cls.randomized = True
 
 
 class WeaponTimingObject(TableObject): pass
