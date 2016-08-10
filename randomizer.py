@@ -12,10 +12,15 @@ VERSION = 1
 ALL_OBJECTS = None
 
 
-class StatObject:
+class CharIndexObject:
     @property
     def character_id(self):
         return self.index % 5
+
+    @classmethod
+    def get_by_character(cls, character, index):
+        candidates = [c for c in cls.every if c.character_id == character]
+        return candidates[index]
 
 
 class MonsterObject(TableObject):
@@ -75,13 +80,29 @@ class MonsterAttackObject(TableObject): pass
 class MonsterRewardObject(TableObject): pass
 class PackObject(TableObject): pass
 class FormationObject(TableObject): pass
-class CharacterObject(TableObject): pass
+class CharacterObject(TableObject):
+    def cleanup(self):
+        self.known_spells = 0
+        my_learned = [l for l in LearnObject.every if l.level <= self.level
+                      and l.character_id == self.index]
+        for l in my_learned:
+            if l.spell <= 0x1A:
+                self.known_spells |= (1 << l.spell)
+
+
 class ItemObject(TableObject): pass
 class LevelUpXPObject(TableObject): pass
-class StatGrowthObject(StatObject, TableObject): pass
-class StatBonusObject(StatObject, TableObject): pass
+class StatGrowthObject(CharIndexObject, TableObject): pass
+class StatBonusObject(CharIndexObject, TableObject): pass
 class SpellObject(TableObject): pass
-class LearnObject(TableObject): pass
+
+
+class LearnObject(CharIndexObject, TableObject):
+    @property
+    def level(self):
+        return (self.index / 5) + 2
+
+
 class WeaponTimingObject(TableObject): pass
 class ShopObject(TableObject): pass
 class FlowerBonusObject(TableObject): pass
