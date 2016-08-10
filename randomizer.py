@@ -12,8 +12,13 @@ VERSION = 1
 ALL_OBJECTS = None
 
 
-class MonsterObject(TableObject):
-    pass
+class MonsterObject(TableObject): pass
+class MonsterAttackObject(TableObject): pass
+class MonsterRewardObject(TableObject): pass
+class CharacterObject(TableObject): pass
+class ItemObject(TableObject): pass
+class SpellObject(TableObject): pass
+class ShopObject(TableObject): pass
 
 
 if __name__ == "__main__":

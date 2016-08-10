@@ -1,3 +1,9 @@
 # objname tablefile address count grouped
 #EventObject         event_table.txt             2f920   107     pointed 2f9f8   2
-MonsterObject       monster_table.txt           390226  242
+MonsterObject       monster_table.txt           390226  256
+MonsterAttackObject monster_attack_table.txt    391226  129
+MonsterRewardObject monster_reward_table.txt    39162a  256
+CharacterObject     character_table.txt         3a002c  5
+ItemObject          item_table.txt              3a014d  256
+SpellObject         spell_table.txt             3a20f1  128
+ShopObject          shop_table.txt              3a44df  33
