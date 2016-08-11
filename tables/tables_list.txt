@@ -8,6 +8,7 @@ PackObject          pack_table.txt              39222a  248
 FormationObject     formation_table.txt         39c000  512
 CharacterObject     character_table.txt         3a002c  5
 ItemObject          item_table.txt              3a014d  256
+PriceObject         price_table.txt             3a40f2  256
 LevelUpXPObject     level_up_xp_table.txt       3a1aff  29
 StatGrowthObject    stat_growth_table.txt       3a1b39  145
 StatBonusObject     stat_bonus_table.txt        3a1cec  145

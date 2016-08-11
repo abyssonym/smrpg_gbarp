@@ -91,6 +91,7 @@ class CharacterObject(TableObject):
 
 
 class ItemObject(TableObject): pass
+class PriceObject(TableObject): pass
 class LevelUpXPObject(TableObject): pass
 class StatGrowthObject(CharIndexObject, TableObject): pass
 class StatBonusObject(CharIndexObject, TableObject): pass
@@ -122,15 +123,15 @@ class LearnObject(CharIndexObject, TableObject):
         while spells:
             valid = [i for i in range(5) if len(charspells[i]) < 6]
             chosen = random.choice(valid)
-            charspells[chosen].append(spells.pop())
+            charspells[chosen].append(spells.pop(0))
         for l in LearnObject.every:
             l.spell = 0xFF
         for i in range(5):
             charlevels = sorted(random.sample(range(2, 20), 5))
             spells = charspells[i]
             c = CharacterObject.get(i)
-            c.known_spells |= (1 << spells[-1])
-            for l, s in zip(charlevels, spells[:-1]):
+            c.known_spells |= (1 << spells[0])
+            for l, s in zip(charlevels, spells[1:]):
                 l = LearnObject.get_by_character(i, l-2)
                 l.spell = s
         cls.randomized = True
