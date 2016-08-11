@@ -131,6 +131,7 @@ class CharacterObject(TableObject):
     mutate_attributes = {"speed": (1, 0xFF),
                          "level": (1, 30),
                          }
+    intershuffle_attributes = ["speed"]
 
     def cleanup(self):
         self.current_hp = self.max_hp
