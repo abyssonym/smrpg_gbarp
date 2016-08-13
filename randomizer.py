@@ -188,7 +188,24 @@ class CharacterObject(TableObject):
 
 class ItemObject(TableObject): pass
 class PriceObject(TableObject): pass
-class LevelUpXPObject(TableObject): pass
+
+
+class LevelUpXPObject(TableObject):
+    @classmethod
+    def full_randomize(cls):
+        if hasattr(cls, "after_order"):
+            for cls2 in cls.after_order:
+                if not (hasattr(cls2, "randomized") and cls2.randomized):
+                    raise Exception("Randomize order violated.")
+        cls.randomized = True
+        xps = sorted([mutate_normal(l.xp, minimum=1, maximum=65535)
+                      for l in cls.every])
+        prev = 0
+        for l, xp in zip(cls.every, xps):
+            while xp <= prev:
+                xp += 1
+            l.xp = xp
+            prev = xp
 
 
 class StatGrowthObject(StatObject, TableObject):
@@ -200,6 +217,7 @@ class StatGrowthObject(StatObject, TableObject):
             for cls2 in cls.after_order:
                 if not (hasattr(cls2, "randomized") and cls2.randomized):
                     raise Exception("Randomize order violated.")
+        cls.randomized = True
         curves = defaultdict(list)
         for character_index in range(5):
             c = CharacterObject.get(character_index)
