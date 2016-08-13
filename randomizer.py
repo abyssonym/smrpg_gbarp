@@ -191,6 +191,8 @@ class PriceObject(TableObject): pass
 
 
 class LevelUpXPObject(TableObject):
+    flag = "c"
+
     @classmethod
     def full_randomize(cls):
         if hasattr(cls, "after_order"):
@@ -331,7 +333,25 @@ class StatBonusObject(StatObject, TableObject):
                 getattr(self, attr), minimum=0, maximum=0xf))
 
 
-class SpellObject(TableObject): pass
+class SpellObject(TableObject):
+    @property
+    def name(self):
+        return SpellNameObject.get(self.index).name
+
+    @property
+    def animation_pointer(self):
+        return AllyAnimPTRObject.get(self.index)
+
+    def set_name(self, name):
+        SpellNameObject.get(self.index).name = name
+
+
+class SpellNameObject(TableObject): pass
+class AllyAnimPTRObject(TableObject): pass
+class EnemAnimPTRObject(TableObject):
+    @classmethod
+    def get_full_index(cls, index):
+        return cls.get(index - 0x40)
 
 
 class LearnObject(CharIndexObject, TableObject):

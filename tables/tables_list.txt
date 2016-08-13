@@ -1,4 +1,6 @@
 # objname tablefile address count grouped
+EnemAnimPTRObject   anim_ptr_table.txt          351026  45
+AllyAnimPTRObject   anim_ptr_table.txt          35c992  27
 MonsterObject       monster_table.txt           390026  256     point1  390000  2
 MonsterAttackObject monster_attack_table.txt    391226  129
 MonsterRewardObject monster_reward_table.txt    39142a  256     point1  390000  2
@@ -9,6 +11,7 @@ FormationObject     formation_table.txt         39c000  512
 CharacterObject     character_table.txt         3a002c  5
 ItemObject          item_table.txt              3a014d  256
 PriceObject         price_table.txt             3a40f2  256
+SpellNameObject     spell_name_table.txt        3a137f  128
 LevelUpXPObject     level_up_xp_table.txt       3a1aff  29
 StatGrowthObject    stat_growth_table.txt       3a1b39  145
 StatBonusObject     stat_bonus_table.txt        3a1cec  145
