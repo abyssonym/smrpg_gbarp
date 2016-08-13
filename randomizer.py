@@ -186,7 +186,24 @@ class CharacterObject(TableObject):
             self.xp = LevelUpXPObject.get(self.level-2).xp
 
 
-class ItemObject(TableObject): pass
+class ItemObject(TableObject):
+    @property
+    def name(self):
+        return ItemNameObject.get(self.index).name
+
+    @property
+    def price(self):
+        return PriceObject.get(self.index).price
+
+    @property
+    def is_frog_coin_item(self):
+        for p in ShopObject.every:
+            if self.index in p.items:
+                return p.get_bit("frog_coins") or p.get_bit("frog_coins_limited")
+        return None
+
+
+class ItemNameObject(TableObject): pass
 class PriceObject(TableObject): pass
 
 
