@@ -81,7 +81,7 @@ class MonsterObject(TableObject):
         }
     intershuffle_attributes = [
             "hp", "speed", "attack", "defense", "magic_attack",
-            "magic_defense", "fp", "evade", "magic_evade", "resistances",
+            "magic_defense", "evade", "magic_evade", "resistances",
             "immunities", "weaknesses_approach", "coin_anim_entrance",
         ]
 
@@ -92,11 +92,19 @@ class MonsterObject(TableObject):
 
     @property
     def intershuffle_valid(self):
-        return not self.is_boss and self.rank >= 550
+        return not self.is_boss
+
+    @property
+    def immune_death(self):
+        return self.hit_special_defense & 0x02
+
+    @property
+    def morph_chance(self):
+        return self.hit_special_defense & 0x0C
 
     @property
     def is_boss(self):
-        return self.hit_special_defense & 0x02
+        return self.immune_death and not self.morph_chance
 
     @classmethod
     def intershuffle(cls):
@@ -116,6 +124,29 @@ class MonsterObject(TableObject):
             for (attr, oldval) in oldstats.items():
                 if getattr(self, attr) < oldval:
                     setattr(self, attr, oldval)
+
+        if self.is_boss:
+            while True:
+                chance = random.randint(0, 3)
+                if chance == 0:
+                    break
+                if chance == 1:
+                    self.resistances |= (1 << random.randint(0, 7))
+                elif chance == 2:
+                    self.immunities |= (1 << random.randint(0, 7))
+                elif chance == 3:
+                    weak = (1 << random.randint(4, 7))
+                    if self.weaknesses_approach & weak:
+                        self.weaknesses_approach ^= weak
+        else:
+            self.resistances = shuffle_bits(self.resistances)
+            self.immunities = shuffle_bits(self.immunities)
+            weak = shuffle_bits(self.weaknesses_approach >> 4, size=4)
+            self.weaknesses_approach &= 0x0F
+            self.weaknesses_approach |= (weak << 4)
+            if random.randint(1, 3) == 3:
+                self.hit_special_defense ^= 0x2
+            self.hit_special_defense ^= (random.randint(0, 3) << 2)
 
 
 class MonsterAttackObject(TableObject): pass
