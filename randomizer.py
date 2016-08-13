@@ -389,13 +389,17 @@ class LearnObject(CharIndexObject, TableObject):
             c.known_spells = 0
         spells = range(0x1b)
         random.shuffle(spells)
-        supplemental = random.sample(spells, 3)
+        supplemental = [0xFF] * 3
         spells = spells + supplemental
         charspells = defaultdict(list)
         while spells:
             valid = [i for i in range(5) if len(charspells[i]) < 6]
             chosen = random.choice(valid)
-            charspells[chosen].append(spells.pop(0))
+            spell = spells.pop(0)
+            if spell == 0xFF:
+                valid = [s for s in range(0x1b) if s not in charspells[i]]
+                spell = random.choice(valid)
+            charspells[chosen].append(spell)
         for l in LearnObject.every:
             l.spell = 0xFF
         for i in range(5):
