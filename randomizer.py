@@ -11,6 +11,7 @@ from os import path
 
 VERSION = 1
 ALL_OBJECTS = None
+LEVEL_STATS = ["max_hp", "attack", "defense", "magic_attack", "magic_defense"]
 
 
 class CharIndexObject:
@@ -176,8 +177,7 @@ class CharacterObject(TableObject):
         my_growths = [s for s in StatGrowthObject.every if
                       s.level <= self.level and s.character_id == self.index]
         for g in my_growths:
-            for attr in ["max_hp", "attack", "defense",
-                         "magic_attack", "magic_defense"]:
+            for attr in LEVEL_STATS:
                 setattr(self, attr, getattr(self, attr) + getattr(g, attr))
 
         if self.level == 1:
@@ -200,12 +200,10 @@ class StatGrowthObject(StatObject, TableObject):
             for cls2 in cls.after_order:
                 if not (hasattr(cls2, "randomized") and cls2.randomized):
                     raise Exception("Randomize order violated.")
-        attributes = ["max_hp", "attack", "defense",
-                      "magic_attack", "magic_defense"]
         curves = defaultdict(list)
         for character_index in range(5):
             c = CharacterObject.get(character_index)
-            for attr in attributes:
+            for attr in LEVEL_STATS:
                 value = getattr(c, attr)
                 for l in cls.every:
                     if l.character_id == c.index and l.level <= 20:
@@ -270,7 +268,7 @@ class StatGrowthObject(StatObject, TableObject):
 
                 curves[attr].append((frontloaded, increases))
 
-        for attr in attributes:
+        for attr in LEVEL_STATS:
             attr_curves = curves[attr]
             random.shuffle(attr_curves)
             for character_index in xrange(5):
@@ -310,6 +308,9 @@ class StatBonusObject(StatObject, TableObject):
         for attr in self.intershuffle_attributes:
             while getattr(self, attr) == 0:
                 setattr(self, attr, getattr(random.choice(valids), attr))
+        for attr in LEVEL_STATS:
+            self.set_stat(attr, mutate_normal(
+                getattr(self, attr), minimum=0, maximum=0xf))
 
 
 class SpellObject(TableObject): pass
