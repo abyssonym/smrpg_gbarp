@@ -187,6 +187,9 @@ class CharacterObject(TableObject):
 
 
 class ItemObject(TableObject):
+    banned_indexes = ([0, 1, 2, 3, 4, 0x23, 0x24, 0x47, 0x48, 0x49, 0x8b,
+                       0x95, 0xa0] + range(0xb1, 0x100))
+
     @property
     def name(self):
         return ItemNameObject.get(self.index).name
@@ -199,8 +202,71 @@ class ItemObject(TableObject):
     def is_frog_coin_item(self):
         for p in ShopObject.every:
             if self.index in p.items:
-                return p.get_bit("frog_coins") or p.get_bit("frog_coins_limited")
+                return p.uses_frog_coins
         return None
+
+    @property
+    def banned(self):
+        return self.index in self.banned_indexes
+
+    @property
+    def is_weapon(self):
+        return (self.variance and (self.useable_itemtype & 0x3) == 0
+                and not self.banned)
+
+    @property
+    def is_armor(self):
+        return (self.useable_itemtype & 0x3) == 1 and not self.banned
+
+    @property
+    def is_accessory(self):
+        return (self.useable_itemtype & 0x3) == 2 and not self.banned
+
+    @property
+    def is_equipment(self):
+        return self.is_weapon or self.is_armor or self.is_accessory
+
+    @property
+    def primary_stats(self):
+        if self.is_weapon:
+            return ["attack"]
+        elif self.is_armor:
+            return ["defense", "magic_defense"]
+        return ["attack", "defense", "speed", "magic_attack", "magic_defense"]
+
+    @property
+    def stat_point_value(self):
+        score = 0
+        for attr in ["attack", "defense", "speed",
+                     "magic_attack", "magic_defense"]:
+            value = getattr(self, attr)
+            if value & 0x80:
+                score += (value - 256)
+            elif attr in self.primary_stats:
+                score += value
+            else:
+                score += (2*value)
+        return score
+
+    @property
+    def is_consumable(self):
+        return self.useable_battle or self.useable_field
+
+    @property
+    def is_key(self):
+        return not (self.is_equipment or self.is_consumable or self.banned)
+
+    @property
+    def useable_battle(self):
+        return self.useable_itemtype & 0x08
+
+    @property
+    def useable_field(self):
+        return self.useable_itemtype & 0x10
+
+    @property
+    def reuseable(self):
+        return self.useable_itemtype & 0x20
 
 
 class ItemNameObject(TableObject): pass
@@ -414,7 +480,27 @@ class LearnObject(CharIndexObject, TableObject):
 
 
 class WeaponTimingObject(TableObject): pass
-class ShopObject(TableObject): pass
+
+
+class ShopObject(TableObject):
+    @property
+    def uses_frog_coins(self):
+        return self.get_bit("frog_coins") or self.get_bit("frog_coins_limited")
+
+    @property
+    def is_juice_bar(self):
+        return 0x9 <= self.index <= 0xC
+
+    def __repr__(self):
+        s = "%x " % self.index
+        s += "FROG COINS\n" if self.uses_frog_coins else "COINS\n"
+        for i in self.items:
+            if i == 0xFF:
+                continue
+            s += "%s\n" % ItemObject.get(i).name.strip()
+        return s.strip()
+
+
 class FlowerBonusObject(TableObject): pass
 
 

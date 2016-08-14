@@ -18,6 +18,6 @@ StatBonusObject     stat_bonus_table.txt        3a1cec  145
 SpellObject         spell_table.txt             3a20f1  128
 LearnObject         learn_table.txt             3a42f5  145
 WeaponTimingObject  weapon_timing_table.txt     3a438a  37
-ShopObject          shop_table.txt              3a44df  33
+ShopObject          shop_table.txt              3a44df  25
 ItemNameObject      spell_name_table.txt        3a46ef  256
 FlowerBonusObject   flower_bonus_table.txt      39bb44  256
