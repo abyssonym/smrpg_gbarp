@@ -483,6 +483,13 @@ class StatBonusObject(StatObject, TableObject):
 
 
 class SpellObject(TableObject):
+    flag = "s"
+    mutate_attributes = {
+            "fp": (1, 99),
+            "power": None,
+            "hitrate": (1, 100),
+            }
+
     @property
     def name(self):
         return SpellNameObject.get(self.index).name
