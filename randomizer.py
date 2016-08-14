@@ -329,6 +329,11 @@ class ItemObject(TableObject):
         self.equippable &= 0xE0
         self.equippable |= random.randint(1, 31)
 
+    def cleanup(self):
+        if self.index in [0x5, 0x23]:
+            # mario must equip tutorial hammer
+            self.set_bit("mario", True)
+
 
 class ItemNameObject(TableObject): pass
 class PriceObject(TableObject): pass
