@@ -12,6 +12,7 @@ from os import path
 VERSION = 1
 ALL_OBJECTS = None
 LEVEL_STATS = ["max_hp", "attack", "defense", "magic_attack", "magic_defense"]
+EQUIP_STATS = ["speed", "attack", "defense", "magic_attack", "magic_defense"]
 
 
 class CharIndexObject:
@@ -187,6 +188,8 @@ class CharacterObject(TableObject):
 
 
 class ItemObject(TableObject):
+    flag = "i"
+    flag_description = "item stats and equippability"
     banned_indexes = ([0, 1, 2, 3, 4, 0x23, 0x24, 0x47, 0x48, 0x49, 0x8b,
                        0x95, 0xa0] + range(0xb1, 0x100))
 
@@ -232,13 +235,12 @@ class ItemObject(TableObject):
             return ["attack"]
         elif self.is_armor:
             return ["defense", "magic_defense"]
-        return ["attack", "defense", "speed", "magic_attack", "magic_defense"]
+        return EQUIP_STATS
 
     @property
     def stat_point_value(self):
         score = 0
-        for attr in ["attack", "defense", "speed",
-                     "magic_attack", "magic_defense"]:
+        for attr in EQUIP_STATS:
             value = getattr(self, attr)
             if value & 0x80:
                 score += (value - 256)
@@ -267,6 +269,65 @@ class ItemObject(TableObject):
     @property
     def reuseable(self):
         return self.useable_itemtype & 0x20
+
+    def mutate(self):
+        self.mutate_equipment()
+
+    def mutate_equipment(self):
+        if not self.is_equipment:
+            return
+        score = self.stat_point_value
+        num_up = bin(random.randint(1, 31)).count('1')
+        num_down = bin(random.randint(0, 31)).count('1')
+        while True:
+            if random.choice([True, False, False]):
+                ups = [attr for attr in EQUIP_STATS
+                       if 1 <= getattr(self, attr) <= 127]
+                if ups:
+                    break
+            ups = random.sample(EQUIP_STATS, num_up)
+            if set(ups) & set(self.primary_stats):
+                break
+        ups = dict([(u, 0) for u in ups])
+        if random.choice([True, False, False]):
+            downs = [attr for attr in EQUIP_STATS
+                   if getattr(self, attr) >= 128]
+        else:
+            downs = random.sample(EQUIP_STATS, num_down)
+        downs = dict([(d, 0) for d in downs if d not in ups])
+        if downs:
+            if score != 0:
+                downpoints = random.randint(0, random.randint(0, score))
+            else:
+                downpoints = random.randint(0, random.randint(0, random.randint(0, 100)))
+            while downpoints > 0:
+                attr = random.choice(downs.keys())
+                downs[attr] += 1
+                downpoints -= 1
+                score += 1
+        while score > 0:
+            attr = random.choice(ups.keys())
+            ups[attr] += 1
+            if attr in self.primary_stats:
+                score -= 1
+            else:
+                score -= 2
+
+        for attr in EQUIP_STATS:
+            setattr(self, attr, 0)
+
+        for attr in ups:
+            setattr(self, attr, min(mutate_normal(
+                ups[attr], minimum=1, maximum=127), 127))
+
+        for attr in downs:
+            value = min(mutate_normal(
+                downs[attr], minimum=1, maximum=127), 127)
+            if value:
+                setattr(self, attr, 256 - value)
+
+        self.equippable &= 0xE0
+        self.equippable |= random.randint(1, 31)
 
 
 class ItemNameObject(TableObject): pass
