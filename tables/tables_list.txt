@@ -6,7 +6,9 @@ MonsterAttackObject monster_attack_table.txt    391226  129
 MonsterRewardObject monster_reward_table.txt    39142a  256     point1  390000  2
 #MonsterAIObject     monster_ai_table.txt        3930aa  256
 PackObject          pack_table.txt              39222a  248
+MonsterNameObject    monster_name_table.txt      3992d1  256
 #PsychopathObject    psychopath_table.txt        399fd1  256     pointed 390000  2
+FlowerBonusObject   flower_bonus_table.txt      39bb44  256
 FormationObject     formation_table.txt         39c000  512
 CharacterObject     character_table.txt         3a002c  5
 ItemObject          item_table.txt              3a014d  256
@@ -20,4 +22,3 @@ LearnObject         learn_table.txt             3a42f5  145
 WeaponTimingObject  weapon_timing_table.txt     3a438a  37
 ShopObject          shop_table.txt              3a44df  25
 ItemNameObject      spell_name_table.txt        3a46ef  256
-FlowerBonusObject   flower_bonus_table.txt      39bb44  256

@@ -69,7 +69,7 @@ class StatObject(CharIndexObject):
 
 class MonsterObject(TableObject):
     flag = "m"
-    flag_description = "enemies"
+    flag_description = "monsters"
     mutate_attributes = {
         "hp": (1, 32000),
         "speed": None,
@@ -86,6 +86,10 @@ class MonsterObject(TableObject):
             "magic_defense", "evade", "magic_evade", "resistances",
             "immunities", "weaknesses_approach", "coin_anim_entrance",
         ]
+
+    @property
+    def name(self):
+        return MonsterNameObject.get(self.index).name
 
     @property
     def rank(self):
@@ -151,7 +155,46 @@ class MonsterObject(TableObject):
             self.hit_special_defense ^= (random.randint(0, 3) << 2)
 
 
-class MonsterAttackObject(TableObject): pass
+class MonsterNameObject(TableObject): pass
+
+
+class MonsterAttackObject(TableObject):
+    flag = "m"
+    mutate_attributes = {"hitrate": (1, 100)}
+    intershuffle_attributes = ["hitrate", "ailments"]
+
+    @property
+    def intershuffle_valid(self):
+        return self.ailments
+
+    @property
+    def no_damage(self):
+        return self.misc_multiplier & 0x50
+
+    @property
+    def multiplier(self):
+        return self.misc_multiplier & 0xF
+
+    @property
+    def hide_digits(self):
+        return self.misc_multiplier & 0x20
+
+    def mutate(self):
+        if self.multiplier <= 7 and not self.buffs:
+            new_multiplier = random.randint(0, random.randint(
+                0, random.randint(0, 8)))
+            if new_multiplier > self.multiplier:
+                self.misc_multiplier = new_multiplier
+        if not self.buffs and random.choice([True, False, False]):
+            i = random.randint(0, 6)
+            if i != 4 or random.randint(1, 10) == 10:
+                self.ailments = 1 << i
+        if self.buffs and random.choice([True, True, False]):
+            self.buffs = random.randint(1, 0xF) << 3
+
+        super(MonsterAttackObject, self).mutate()
+
+
 class MonsterRewardObject(TableObject): pass
 class PackObject(TableObject): pass
 class FormationObject(TableObject): pass
