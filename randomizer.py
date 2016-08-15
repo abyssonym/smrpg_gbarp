@@ -154,6 +154,15 @@ class MonsterObject(TableObject):
                 self.hit_special_defense ^= 0x2
             self.hit_special_defense ^= (random.randint(0, 3) << 2)
 
+    @classmethod
+    def full_cleanup(cls):
+        smithies = [m for m in MonsterObject.every
+                    if m.index in [0xb5, 0xb6, 0xed, 0xee, 0xef]]
+        hp = max([m.hp for m in smithies])
+        for s in smithies:
+            s.hp = hp
+        super(MonsterObject, cls).full_cleanup()
+
 
 class MonsterNameObject(TableObject): pass
 
