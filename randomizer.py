@@ -205,7 +205,35 @@ class MonsterAttackObject(TableObject):
 
 
 class MonsterRewardObject(TableObject): pass
-class PackObject(TableObject): pass
+
+
+class PackObject(TableObject):
+    def __repr__(self):
+        s = "PACK %x (%x) %s\n" % (
+            self.index, self.misc,
+            [e.name.strip() for e in self.common_enemies])
+        if len(set(self.formation_ids)) == 1:
+            formations = [self.formations[0]]
+        else:
+            formations = self.formations
+        for f in formations:
+            s += "%s\n" % f
+        return s.strip()
+
+    @property
+    def formations(self):
+        return [FormationObject.get(f) for f in self.formation_ids]
+
+    @property
+    def is_static(self):
+        return len(set(self.formation_ids)) == 1
+
+    @property
+    def common_enemies(self):
+        enemies = set(self.formations[0].enemies)
+        for f in self.formations[1:]:
+            enemies &= set(f.enemies)
+        return sorted(enemies, key=lambda e: e.index)
 
 
 class FormationObject(TableObject):
@@ -220,11 +248,15 @@ class FormationObject(TableObject):
                            getattr(self, "monster%s_x" % i),
                            getattr(self, "monster%s_y" % i))
             m = MonsterObject.get(index)
+            if h == "1" or p == "1":
+                s += "%x %s" % (index, m.name.strip())
+                if m in self.leaders:
+                    s += "*"
             if h != "1" and p == "1":
-                s += "%x %s (%s, %s); " % (index, m.name.strip(), x, y)
+                s += " (%s, %s); " % (x, y)
             if h == "1":
                 assert p == "1"
-                s += "%x %s (hidden, %s, %s); " % (index, m.name.strip(), x, y)
+                s += " (hidden, %s, %s); " % (x, y)
         s = s.strip().rstrip(";").strip()
         return s
 
@@ -238,6 +270,19 @@ class FormationObject(TableObject):
                 m = MonsterObject.get(getattr(self, "monster%s" % i))
                 enemy_list.append(m)
         return enemy_list
+
+    @property
+    def leaders(self):
+        if not hasattr(self, "_leaders"):
+            for f in FormationObject.every:
+                f._leaders = set([])
+            for p in PackObject.every:
+                common_enemies = set(p.common_enemies)
+                for f in p.formations:
+                    f._leaders |= common_enemies
+            for f in FormationObject.every:
+                f._leaders = sorted(f._leaders, key=lambda m: m.index)
+        return self._leaders
 
 
 class CharacterObject(TableObject):
@@ -674,6 +719,11 @@ if __name__ == "__main__":
         clean_and_write(ALL_OBJECTS)
         rewrite_snes_meta("SMRPG-R", VERSION, megabits=32, lorom=True)
         finish_interface()
+        for p in PackObject.every:
+            print p
+            print
+        for f in FormationObject.every:
+            print f
         import pdb; pdb.set_trace()
     except ValueError, e:
         print "ERROR: %s" % e
