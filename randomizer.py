@@ -206,7 +206,38 @@ class MonsterAttackObject(TableObject):
 
 class MonsterRewardObject(TableObject): pass
 class PackObject(TableObject): pass
-class FormationObject(TableObject): pass
+
+
+class FormationObject(TableObject):
+    def __repr__(self):
+        present = bin(self.enemies_present)[2:]
+        hidden = bin(self.enemies_hidden)[2:]
+        present = "{0:0>8}".format(present)
+        hidden = "{0:0>8}".format(hidden)
+        s = "%x: " % self.index
+        for i, (p, h) in enumerate(zip(present, hidden)):
+            index, x, y = (getattr(self, "monster%s" % i),
+                           getattr(self, "monster%s_x" % i),
+                           getattr(self, "monster%s_y" % i))
+            m = MonsterObject.get(index)
+            if h != "1" and p == "1":
+                s += "%x %s (%s, %s); " % (index, m.name.strip(), x, y)
+            if h == "1":
+                assert p == "1"
+                s += "%x %s (hidden, %s, %s); " % (index, m.name.strip(), x, y)
+        s = s.strip().rstrip(";").strip()
+        return s
+
+    @property
+    def enemies(self):
+        enemies = bin(self.enemies_present | self.enemies_hidden)[2:]
+        enemies = "{0:0>8}".format(enemies)
+        enemy_list = []
+        for (i, c) in enumerate(enemies):
+            if c == "1":
+                m = MonsterObject.get(getattr(self, "monster%s" % i))
+                enemy_list.append(m)
+        return enemy_list
 
 
 class CharacterObject(TableObject):
