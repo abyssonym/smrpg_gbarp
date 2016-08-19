@@ -22,3 +22,4 @@ LearnObject         learn_table.txt             3a42f5  145
 WeaponTimingObject  weapon_timing_table.txt     3a438a  37
 ShopObject          shop_table.txt              3a44df  25
 ItemNameObject      spell_name_table.txt        3a46ef  256
+WorldMapObject      world_map_table.txt         3ef830  55

@@ -744,6 +744,24 @@ class FlowerBonusObject(TableObject):
         self.bonus = (probability << 4) | bonustype
 
 
+class WorldMapObject(TableObject):
+    def unlock_everything(self):
+        self.node_unlock &= 0xFC00
+        self.node_unlock |= 0x100
+        for direction in ["north", "east", "south", "west"]:
+            attr = "%s_unlock" % direction
+            value = getattr(self, attr)
+            if value == 0xFF:
+                continue
+            value &= 0xC0
+            value |= 1
+            setattr(self, attr, value)
+
+
+def randomize_file_select():
+    addresses = [0x34757, 0x3489a, 0x34ee7, 0x340aa, 0x3501e]
+
+
 if __name__ == "__main__":
     try:
         print ('You are using the Super Mario RPG '
@@ -755,6 +773,8 @@ if __name__ == "__main__":
         hexify = lambda x: "{0:0>2}".format("%x" % x)
         numify = lambda x: "{0: >3}".format(x)
         minmax = lambda x: (min(x), max(x))
+        #for w in WorldMapObject:
+        #    w.unlock_everything()
         clean_and_write(ALL_OBJECTS)
         rewrite_snes_meta("SMRPG-R", VERSION, megabits=32, lorom=True)
         finish_interface()
