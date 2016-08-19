@@ -734,7 +734,14 @@ class ShopObject(TableObject):
         return s.strip()
 
 
-class FlowerBonusObject(TableObject): pass
+class FlowerBonusObject(TableObject):
+    flag = "d"
+    flag_description = "drops"
+
+    def randomize(self):
+        probability = random.randint(0, 5) + random.randint(0, 5)
+        bonustype = random.randint(1, 5)
+        self.bonus = (probability << 4) | bonustype
 
 
 if __name__ == "__main__":
