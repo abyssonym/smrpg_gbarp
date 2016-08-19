@@ -151,16 +151,17 @@ class MonsterObject(TableObject):
                 if chance == 0:
                     break
                 if chance == 1:
-                    self.resistances |= (1 << random.randint(0, 7))
+                    self.resistances |= (1 << random.randint(4, 7))
                 elif chance == 2:
-                    self.immunities |= (1 << random.randint(0, 7))
+                    self.immunities |= (1 << random.randint(0, 3))
                 elif chance == 3:
                     weak = (1 << random.randint(4, 7))
                     if self.weaknesses_approach & weak:
                         self.weaknesses_approach ^= weak
         else:
-            self.resistances = shuffle_bits(self.resistances)
-            self.immunities = shuffle_bits(self.immunities)
+            resistances = shuffle_bits(self.resistances >> 4, size=4)
+            self.resistances = resistances << 4
+            self.immunities = shuffle_bits(self.immunities, size=4)
             weak = shuffle_bits(self.weaknesses_approach >> 4, size=4)
             self.weaknesses_approach &= 0x0F
             self.weaknesses_approach |= (weak << 4)
@@ -750,11 +751,6 @@ if __name__ == "__main__":
         clean_and_write(ALL_OBJECTS)
         rewrite_snes_meta("SMRPG-R", VERSION, megabits=32, lorom=True)
         finish_interface()
-        for p in PackObject.every:
-            print p
-            print
-        for f in FormationObject.every:
-            print f
         import pdb; pdb.set_trace()
     except ValueError, e:
         print "ERROR: %s" % e
