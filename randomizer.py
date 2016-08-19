@@ -1,4 +1,4 @@
-from randomtools.tablereader import TableObject
+from randomtools.tablereader import TableObject, get_global_label
 from randomtools.utils import (
     classproperty, mutate_normal, shuffle_bits,
     utilrandom as random)
@@ -781,7 +781,24 @@ class WorldMapObject(TableObject):
 
 
 def randomize_file_select():
+    if get_global_label() != "SMRPG_NA":
+        return
     addresses = [0x34757, 0x3489a, 0x34ee7, 0x340aa, 0x3501e]
+    choices = {"peach": range(7, 13),
+               "bowser": range(13, 19),
+               "mallow": range(19, 25),
+               "geno": range(25, 31),
+               }
+    values = random.choice(choices.values())
+    values = [values[i] for i in [0, 1, 0, 0, 1]]
+    f = open(get_outfile(), "r+b")
+    for addr, value in zip(addresses, values):
+        f.seek(addr)
+        f.write(chr(value))
+    f.seek(0x3EF140)
+    seed = str(get_seed()).center(10)
+    f.write(seed)
+    f.close()
 
 
 if __name__ == "__main__":
@@ -796,6 +813,7 @@ if __name__ == "__main__":
         numify = lambda x: "{0: >3}".format(x)
         minmax = lambda x: (min(x), max(x))
         clean_and_write(ALL_OBJECTS)
+        randomize_file_select()
         rewrite_snes_meta("SMRPG-R", VERSION, megabits=32, lorom=True)
         finish_interface()
         import pdb; pdb.set_trace()
