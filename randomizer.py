@@ -87,7 +87,7 @@ class MonsterObject(TableObject):
             "immunities", "weaknesses_approach", "coin_anim_entrance",
         ]
     banned = [0x4e, 0x6f, 0x73, 0x74, 0x81, 0x82, 0x83, 0x84, 0x85,
-              0x8d, 0xa0, 0xb7, 0xb9, 0xc9, 0xd6, 0xe8, 0xf2]
+              0x8d, 0x8e, 0xa0, 0xb7, 0xb9, 0xc9, 0xd6, 0xe8, 0xf2]
 
     @property
     def name(self):
@@ -112,19 +112,9 @@ class MonsterObject(TableObject):
 
     @property
     def is_boss(self):
-        if self.index in self.banned:
+        if self.index in self.banned or self.misc & 1:
             return True
-        if self.morph_chance or not self.immune_death:
-            return False
-        if hasattr(self, "_is_boss"):
-            return self._is_boss
-        for p in PackObject.every:
-            for f in p.formations:
-                if self in f.enemies:
-                    self._is_boss = False
-                    return self.is_boss
-        self._is_boss = True
-        return self.is_boss
+        return False
 
     @classmethod
     def intershuffle(cls):
