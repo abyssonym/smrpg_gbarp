@@ -114,7 +114,7 @@ class MonsterObject(TableObject):
     def is_boss(self):
         if self.index in self.banned:
             return True
-        if self.immune_death or self.morph_chance:
+        if self.morph_chance or not self.immune_death:
             return False
         if hasattr(self, "_is_boss"):
             return self._is_boss
@@ -315,6 +315,38 @@ class FormationObject(TableObject):
             for f in FormationObject.every:
                 f._leaders = sorted(f._leaders, key=lambda m: m.index)
         return self._leaders
+
+    @property
+    def meta(self):
+        return FormMetaObject.get(self.index)
+
+    @property
+    def has_event(self):
+        if self.meta.event == 0xFF:
+            return False
+        else:
+            return True
+
+    @property
+    def music(self):
+        if self.meta.misc & 0xc0 == 0xc0:
+            return None
+        return (self.meta.misc >> 2) & 0x7
+
+    @property
+    def inescapable(self):
+        return self.meta.misc & 2
+
+    def set_music(self, value):
+        if value is None:
+            self.meta.misc &= 0xE3
+            self.meta.misc |= 0xC0
+        else:
+            self.meta.misc &= 0xE3
+            self.meta.misc |= (music << 2)
+
+
+class FormMetaObject(TableObject): pass
 
 
 class CharacterObject(TableObject):
@@ -773,8 +805,6 @@ if __name__ == "__main__":
         hexify = lambda x: "{0:0>2}".format("%x" % x)
         numify = lambda x: "{0: >3}".format(x)
         minmax = lambda x: (min(x), max(x))
-        #for w in WorldMapObject:
-        #    w.unlock_everything()
         clean_and_write(ALL_OBJECTS)
         rewrite_snes_meta("SMRPG-R", VERSION, megabits=32, lorom=True)
         finish_interface()

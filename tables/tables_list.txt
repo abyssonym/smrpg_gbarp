@@ -10,6 +10,7 @@ MonsterNameObject    monster_name_table.txt      3992d1  256
 #PsychopathObject    psychopath_table.txt        399fd1  256     pointed 390000  2
 FlowerBonusObject   flower_bonus_table.txt      39bb44  256
 FormationObject     formation_table.txt         39c000  512
+FormMetaObject      form_meta_table.txt         392aaa  512
 CharacterObject     character_table.txt         3a002c  5
 ItemObject          item_table.txt              3a014d  256
 PriceObject         price_table.txt             3a40f2  256
