@@ -1,6 +1,6 @@
 # objname tablefile address count grouped
-EnemAnimPTRObject   anim_ptr_table.txt          351026  45
-AllyAnimPTRObject   anim_ptr_table.txt          35c992  27
+EnemSpriteObject    enem_sprite_table.txt       250400  256
+AnimSeqPTRObject    anim_seq_ptr_table.txt      252000  444
 MonsterObject       monster_table.txt           390026  256     point1  390000  2
 MonsterAttackObject monster_attack_table.txt    391226  129
 MonsterRewardObject monster_reward_table.txt    39142a  256     point1  390000  2

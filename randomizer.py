@@ -67,6 +67,10 @@ class StatObject(CharIndexObject):
         setattr(self, affected, newvalue)
 
 
+class EnemSpriteObject(TableObject): pass
+class AnimSeqPTRObject(TableObject): pass
+
+
 class MonsterObject(TableObject):
     flag = "m"
     flag_description = "monsters"
@@ -84,17 +88,31 @@ class MonsterObject(TableObject):
     intershuffle_attributes = [
             "hp", "speed", "attack", "defense", "magic_attack",
             "magic_defense", "evade", "magic_evade", "resistances",
-            "immunities", "weaknesses_approach", "coin_anim_entrance",
+            "immunities", "weaknesses_approach",
+            #"coin_anim_entrance", (floating + random coordinates = freeze?)
         ]
-    banned = [0x4e, 0x6f, 0x73, 0x74, 0x81, 0x82, 0x83, 0x84, 0x85,
-              0x8d, 0x8e, 0xa0, 0xb7, 0xb9, 0xc9, 0xd6, 0xe8, 0xf2]
+    banned = [0x4e, 0x61, 0x81, 0x82, 0x83, 0x84, 0x85, 0x8d,
+              0x8e, 0xa0, 0xab, 0xb4, 0xb7, 0xb9, 0xba, 0xc9, 0xd6, 0xe7, 0xe8,
+              0xf2, 0xf7, 0xfa]
 
     def get_similar(self):
         if self.is_boss:
             return self
         candidates = [m for m in MonsterObject.ranked
-                      if m.index not in self.banned]
+                      if not m.is_boss]
         return super(MonsterObject, self).get_similar(candidates)
+
+    @property
+    def vram_value(self):
+        if hasattr(self, "_vram_value"):
+            return self._vram_value
+        anim_index = EnemSpriteObject.get(self.index).animation
+        ptr = AnimSeqPTRObject.get(anim_index).anim_seq_ptr & 0x3fffff
+        f = open(get_outfile(), "r+b")
+        f.seek(ptr + 8)
+        self._vram_value = ord(f.read(1))
+        f.close()
+        return self.vram_value
 
     @property
     def name(self):
@@ -118,8 +136,12 @@ class MonsterObject(TableObject):
         return self.hit_special_defense & 0x0C
 
     @property
+    def event_on_death(self):
+        return self.misc & 1
+
+    @property
     def is_boss(self):
-        if self.index in self.banned or self.misc & 1:
+        if self.index in self.banned or self.event_on_death:
             return True
         return False
 
@@ -285,6 +307,21 @@ class FormationObject(TableObject):
         return s
 
     @property
+    def vram_used(self):
+        if self.enemies_hidden:
+            return None
+        return sum([e.vram_value for e in self.enemies])
+
+    @property
+    def coordinates(self):
+        coordinates = []
+        for i in xrange(8):
+            if self.enemies_present & (1 << (7-i)):
+                coordinates.append((getattr(self, "monster%s_x" % i),
+                                    getattr(self, "monster%s_y" % i)))
+        return coordinates
+
+    @property
     def rank(self):
         enemies = sorted(self.enemies, key=lambda m: m.rank, reverse=True)
         rank = 0
@@ -380,10 +417,6 @@ class FormationObject(TableObject):
             self.meta.misc |= (value << 2)
 
     def mutate(self):
-        # randomizing formations not currently feasible
-        # each enemy's vram limitations are unknown
-        return
-
         MAX_ENEMIES = 8
         if self.bosses or self.enemies_hidden or not self.enemies_present:
             return
@@ -396,10 +429,16 @@ class FormationObject(TableObject):
         assert len(set(candidates)) <= 3
         num_enemies = random.randint(1, random.randint(3, MAX_ENEMIES))
         num_enemies = max(num_enemies, len(self.leaders))
-        num_enemies = bin(self.enemies_present).count("1")
         chosen_enemies = list(self.leaders)
         while len(chosen_enemies) < num_enemies:
-            chosen_enemies.append(random.choice(candidates + chosen_enemies))
+            vram_total = sum([e.vram_value for e in chosen_enemies])
+            sub_candidates = candidates + chosen_enemies
+            sub_candidates = [e for e in sub_candidates
+                              if vram_total + e.vram_value <= 64]
+            if not sub_candidates:
+                num_enemies = len(chosen_enemies)
+                break
+            chosen_enemies.append(random.choice(sub_candidates))
         random.shuffle(chosen_enemies)
 
         def mutate_coordinate((x, y)):
@@ -429,16 +468,18 @@ class FormationObject(TableObject):
                     (x, y) = mutate_coordinate((x, y))
                 else:
                     candidates = random.sample(self.valid_coordinates,
-                                               len(chosen_enemies)+2)
+                                               len(chosen_enemies)*2)
                     candidates = map(mutate_coordinate, candidates)
                     (x, y) = select_most_distance(candidates, done_coordinates)
                 done_coordinates.append((x, y))
                 self.enemies_present |= (1 << (7-i))
             else:
                 e = 0
-                x = 0
-                y = 0
             setattr(self, "monster%s" % i, e)
+            setattr(self, "monster%s_x" % i, 0)
+            setattr(self, "monster%s_y" % i, 0)
+        done_coordinates = sorted(done_coordinates)
+        for i, (x, y) in enumerate(done_coordinates):
             setattr(self, "monster%s_x" % i, x)
             setattr(self, "monster%s_y" % i, y)
 
@@ -783,20 +824,11 @@ class SpellObject(TableObject):
     def name(self):
         return SpellNameObject.get(self.index).name
 
-    @property
-    def animation_pointer(self):
-        return AllyAnimPTRObject.get(self.index)
-
     def set_name(self, name):
         SpellNameObject.get(self.index).name = name
 
 
 class SpellNameObject(TableObject): pass
-class AllyAnimPTRObject(TableObject): pass
-class EnemAnimPTRObject(TableObject):
-    @classmethod
-    def get_full_index(cls, index):
-        return cls.get(index - 0x40)
 
 
 class LearnObject(CharIndexObject, TableObject):
