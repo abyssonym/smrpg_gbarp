@@ -89,6 +89,13 @@ class MonsterObject(TableObject):
     banned = [0x4e, 0x6f, 0x73, 0x74, 0x81, 0x82, 0x83, 0x84, 0x85,
               0x8d, 0x8e, 0xa0, 0xb7, 0xb9, 0xc9, 0xd6, 0xe8, 0xf2]
 
+    def get_similar(self):
+        if self.is_boss:
+            return self
+        candidates = [m for m in MonsterObject.ranked
+                      if m.index not in self.banned]
+        return super(MonsterObject, self).get_similar(candidates)
+
     @property
     def name(self):
         return MonsterNameObject.get(self.index).name
@@ -213,6 +220,10 @@ class MonsterRewardObject(TableObject): pass
 
 
 class PackObject(TableObject):
+    @classproperty
+    def after_order(self):
+        return [FormationObject]
+
     def __repr__(self):
         s = "PACK %x (%x) %s\n" % (
             self.index, self.misc,
@@ -231,7 +242,11 @@ class PackObject(TableObject):
 
     @property
     def formations(self):
-        return [FormationObject.get(f) for f in self.formation_ids]
+        if self.misc == 7:
+            mask = 0x100
+        else:
+            mask = 0
+        return [FormationObject.get(f | mask) for f in self.formation_ids]
 
     @property
     def is_static(self):
@@ -285,9 +300,12 @@ class FormationObject(TableObject):
     @property
     def enemies(self):
         enemies = bin(self.enemies_present | self.enemies_hidden)[2:]
-        enemies = "{0:0>8}".format(enemies)
+        return self.get_enemy_list(enemies)
+
+    def get_enemy_list(self, bitmask):
+        bitmask = "{0:0>8}".format(bitmask)
         enemy_list = []
-        for (i, c) in enumerate(enemies):
+        for (i, c) in enumerate(bitmask):
             if c == "1":
                 m = MonsterObject.get(getattr(self, "monster%s" % i))
                 enemy_list.append(m)
@@ -303,8 +321,34 @@ class FormationObject(TableObject):
                 for f in p.formations:
                     f._leaders |= common_enemies
             for f in FormationObject.every:
+                if not f._leaders:
+                    f._leaders = list(f.enemies)
                 f._leaders = sorted(f._leaders, key=lambda m: m.index)
         return self._leaders
+
+    @classproperty
+    def valid_coordinates(cls):
+        if hasattr(cls, "_valid_coordinates"):
+            return cls._valid_coordinates
+
+        cls._valid_coordinates = set([])
+        for f in FormationObject.every:
+            if not f.bosses:
+                bitmask = f.enemies_present & (0xFF ^ f.enemies_hidden)
+                for i in xrange(8):
+                    if bitmask & (1 << (7-i)):
+                        (x, y) = (getattr(f, "monster%s_x" % i),
+                                  getattr(f, "monster%s_y" % i))
+                    else:
+                        continue
+                    if (x, y) == (0, 0):
+                        break
+                    cls._valid_coordinates.add((x, y))
+        cls._valid_coordinates = sorted(cls._valid_coordinates)
+        xs, ys = zip(*cls._valid_coordinates)
+        cls.lower_x, cls.upper_x = min(xs), max(xs)
+        cls.lower_y, cls.upper_y = min(ys), max(ys)
+        return cls.valid_coordinates
 
     @property
     def meta(self):
@@ -325,7 +369,7 @@ class FormationObject(TableObject):
 
     @property
     def inescapable(self):
-        return self.meta.misc & 2
+        return self.meta.misc & 3
 
     def set_music(self, value):
         if value is None:
@@ -333,7 +377,70 @@ class FormationObject(TableObject):
             self.meta.misc |= 0xC0
         else:
             self.meta.misc &= 0xE3
-            self.meta.misc |= (music << 2)
+            self.meta.misc |= (value << 2)
+
+    def mutate(self):
+        # randomizing formations not currently feasible
+        # each enemy's vram limitations are unknown
+        return
+
+        MAX_ENEMIES = 8
+        if self.bosses or self.enemies_hidden or not self.enemies_present:
+            return
+        candidates = list(self.leaders)
+        while len(candidates) < 3:
+            base = random.choice(candidates)
+            new = base.get_similar()
+            if new not in candidates:
+                candidates.append(new)
+        assert len(set(candidates)) <= 3
+        num_enemies = random.randint(1, random.randint(3, MAX_ENEMIES))
+        num_enemies = max(num_enemies, len(self.leaders))
+        num_enemies = bin(self.enemies_present).count("1")
+        chosen_enemies = list(self.leaders)
+        while len(chosen_enemies) < num_enemies:
+            chosen_enemies.append(random.choice(candidates + chosen_enemies))
+        random.shuffle(chosen_enemies)
+
+        def mutate_coordinate((x, y)):
+            x = mutate_normal(x, minimum=self.lower_x, maximum=self.upper_x)
+            y = mutate_normal(y, minimum=self.lower_y, maximum=self.upper_y)
+            return (x, y)
+
+        def get_distance((x1, y1), (x2, y2)):
+            return ((x1-x2)**2 + (y1-y2)**2)**0.5
+
+        def get_collective_distance(p, points):
+            distances = [get_distance(p, p2) for p2 in points]
+            return reduce(lambda a, b: a*b, distances, 1)
+
+        def select_most_distance(candidates, done_coordinates):
+            score = lambda p: get_collective_distance(p, done_coordinates)
+            chosen = max(candidates, key=lambda c: score(c))
+            return chosen
+
+        self.enemies_present = 0
+        done_coordinates = []
+        for i in range(8):
+            if i < len(chosen_enemies):
+                e = chosen_enemies[i].index
+                if not done_coordinates:
+                    (x, y) = random.choice(self.valid_coordinates)
+                    (x, y) = mutate_coordinate((x, y))
+                else:
+                    candidates = random.sample(self.valid_coordinates,
+                                               len(chosen_enemies)+2)
+                    candidates = map(mutate_coordinate, candidates)
+                    (x, y) = select_most_distance(candidates, done_coordinates)
+                done_coordinates.append((x, y))
+                self.enemies_present |= (1 << (7-i))
+            else:
+                e = 0
+                x = 0
+                y = 0
+            setattr(self, "monster%s" % i, e)
+            setattr(self, "monster%s_x" % i, x)
+            setattr(self, "monster%s_y" % i, y)
 
 
 class FormMetaObject(TableObject): pass
