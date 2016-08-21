@@ -283,6 +283,9 @@ class PackObject(TableObject):
 
 
 class FormationObject(TableObject):
+    flag = 'f'
+    flag_description = "formations"
+
     def __repr__(self):
         present = bin(self.enemies_present)[2:]
         hidden = bin(self.enemies_hidden)[2:]
