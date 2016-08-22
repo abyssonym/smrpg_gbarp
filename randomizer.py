@@ -660,7 +660,9 @@ class ItemObject(TableObject):
                 setattr(self, attr, 256 - value)
 
         self.equippable &= 0xE0
-        self.equippable |= random.randint(1, 31)
+        num_equippable = random.randint(1,random.randint(1, 5))
+        for _ in xrange(num_equippable):
+            self.equippable |= (1 << random.randint(0, 4))
 
     def cleanup(self):
         if self.index in [0x5, 0x23]:
