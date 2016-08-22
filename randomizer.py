@@ -91,9 +91,9 @@ class MonsterObject(TableObject):
             "immunities", "weaknesses_approach",
             #"coin_anim_entrance", (floating + random coordinates = freeze?)
         ]
-    banned = [0x4e, 0x61, 0x81, 0x82, 0x83, 0x84, 0x85, 0x8d,
-              0x8e, 0xa0, 0xab, 0xb4, 0xb7, 0xb9, 0xba, 0xc9, 0xd6, 0xe7, 0xe8,
-              0xf2, 0xf7, 0xfa]
+    banned_indexes = [0x4e, 0x61, 0x81, 0x82, 0x83, 0x84, 0x85, 0x8d,
+        0x8e, 0xa0, 0xab, 0xb4, 0xb7, 0xb9, 0xba, 0xc9, 0xd6, 0xe7, 0xe8,
+        0xf2, 0xf7, 0xfa]
 
     def get_similar(self):
         if self.is_boss:
@@ -101,6 +101,10 @@ class MonsterObject(TableObject):
         candidates = [m for m in MonsterObject.ranked
                       if not m.is_boss]
         return super(MonsterObject, self).get_similar(candidates)
+
+    @property
+    def banned(self):
+        return self.index in self.banned_indexes
 
     @property
     def vram_value(self):
@@ -141,7 +145,7 @@ class MonsterObject(TableObject):
 
     @property
     def is_boss(self):
-        if self.index in self.banned or self.event_on_death:
+        if self.banned or self.event_on_death:
             return True
         return False
 
@@ -238,7 +242,68 @@ class MonsterAttackObject(TableObject):
         super(MonsterAttackObject, self).mutate()
 
 
-class MonsterRewardObject(TableObject): pass
+class MonsterRewardObject(TableObject):
+    flag = "d"
+    mutate_attributes = {"xp": (0, 65535),
+                         "coins": (0, 255),
+                         }
+    intershuffle_attributes = ["xp", "coins", "drop", "rare_drop"]
+
+    @property
+    def intershuffle_valid(self):
+        return self.monster.intershuffle_valid and (
+            self.drop != self.rare_drop or self.drop == 0xFF)
+
+    @property
+    def rank(self):
+        return self.monster.rank
+
+    @classproperty
+    def after_order(self):
+        return [ShopObject, MonsterObject]
+
+    def __repr__(self):
+        return "%s %s %s %s %s %s" % (
+            self.monster.name, self.drop_item.name, self.rare_drop_item.name,
+            self.yoshi_cookie_item.name, self.xp, self.coins)
+
+    @property
+    def monster(self):
+        return MonsterObject.get(self.index)
+
+    @property
+    def rare_drop_item(self):
+        return ItemObject.get(self.rare_drop)
+
+    @property
+    def drop_item(self):
+        return ItemObject.get(self.drop)
+
+    @property
+    def yoshi_cookie_item(self):
+        return ItemObject.get(self.yoshi_cookie)
+
+    def mutate(self):
+        super(MonsterRewardObject, self).mutate()
+        consumables = [i for i in ItemObject.every
+                       if i.is_consumable and not i.reuseable and not i.banned]
+        if self.drop == self.rare_drop:
+            linked = True
+        else:
+            linked = False
+        self.drop = ItemObject.get(self.drop).get_similar(consumables).index
+        if linked:
+            self.rare_drop = self.drop
+        else:
+            self.rare_drop = ItemObject.get(
+                self.rare_drop).get_similar(consumables).index
+
+    def randomize(self):
+        if self.monster.morph_chance and not self.monster.banned:
+            self.yoshi_cookie = random.choice(
+                [i for i in ItemObject.every if not i.banned]).index
+        else:
+            self.yoshi_cookie = 0xFF
 
 
 class PackObject(TableObject):
@@ -283,7 +348,7 @@ class PackObject(TableObject):
 
 
 class FormationObject(TableObject):
-    flag = 'f'
+    flag = "f"
     flag_description = "formations"
 
     def __repr__(self):
@@ -523,8 +588,59 @@ class CharacterObject(TableObject):
 class ItemObject(TableObject):
     flag = "i"
     flag_description = "item stats and equippability"
-    banned_indexes = ([0, 1, 2, 3, 4, 0x23, 0x24, 0x47, 0x48, 0x49, 0x8b,
+    banned_indexes = ([0, 1, 2, 3, 4, 0x24, 0x47, 0x48, 0x49, 0x5f, 0x8b,
                        0x95, 0xa0] + range(0xb1, 0x100))
+
+    @classmethod
+    def classify_rare(cls):
+        for s in ShopObject.every:
+            if s.uses_frog_coins:
+                continue
+            for i in s.items:
+                item = ItemObject.get(i)
+                item._rare = False
+        for i in ItemObject.every:
+            if hasattr(i, "rare"):
+                continue
+            i._rare = True
+
+    @property
+    def rare(self):
+        if hasattr(self, "_rare"):
+            return self._rare
+        ItemObject.classify_rare()
+        return self.rare
+
+    @property
+    def rank(self):
+        if hasattr(self, "_rank"):
+            return self._rank
+        price = PriceObject.get(self.index).price
+        if self.banned:
+            self._rank = -1
+        elif price == 0 and not self.is_key:
+            self._rank = random.randint(1, random.randint(1, 999))
+        elif price == 0:
+            self._rank = -1
+        elif self.is_frog_coin_item:
+            self._rank = price * 50
+        elif price > 1000:
+            self._rank = price / 2
+        elif self.rare and self.is_consumable:
+            rank = 2 * price
+            if price <= 50:
+                rank = rank * 50
+            if self.reuseable:
+                rank = rank * 4
+            self._rank = rank
+        elif self.rare and self.is_armor:
+            self._rank = price * 3
+        elif self.rare and self.is_accessory:
+            self._rank = price * 2
+        else:
+            self._rank = price
+        self._rank += (1 - (self.index / 1000.0))
+        return self.rank
 
     @property
     def name(self):
@@ -665,7 +781,7 @@ class ItemObject(TableObject):
             self.equippable |= (1 << random.randint(0, 4))
 
     def cleanup(self):
-        if self.index in [0x5, 0x23]:
+        if self.index == 5:
             # mario must equip tutorial hammer
             self.set_bit("mario", True)
 
