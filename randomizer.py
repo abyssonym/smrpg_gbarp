@@ -29,6 +29,10 @@ class CharIndexObject:
         candidates = [c for c in cls.every if c.character_id == character]
         return candidates[index]
 
+    @property
+    def character(self):
+        return CharacterObject.get(self.character_id)
+
 
 class StatObject(CharIndexObject):
     @property
@@ -564,6 +568,31 @@ class CharacterObject(TableObject):
                          }
     intershuffle_attributes = ["speed"]
 
+    @property
+    def stats(self):
+        if hasattr(self, "_stats"):
+            return self._stats
+        self._stats = [s for s in (StatGrowthObject.every +
+                                   StatBonusObject.every)
+                       if s.character_id == self.index]
+        return self.stats
+
+    @property
+    def growth_stats(self):
+        if hasattr(self, "_growth_stats"):
+            return self._growth_stats
+        self._growth_stats = [s for s in StatGrowthObject.every
+                              if s.character_id == self.index]
+        return self.growth_stats
+
+    @property
+    def bonus_stats(self):
+        if hasattr(self, "_bonus_stats"):
+            return self._bonus_stats
+        self._bonus_stats = [s for s in StatBonusObject.every
+                             if s.character_id == self.index]
+        return self.bonus_stats
+
     def cleanup(self):
         self.current_hp = self.max_hp
         self.weapon = 0xFF
@@ -576,16 +605,48 @@ class CharacterObject(TableObject):
             if l.spell <= 0x1A:
                 self.known_spells |= (1 << l.spell)
 
-        my_growths = [s for s in StatGrowthObject.every if
-                      s.level <= self.level and s.character_id == self.index]
-        for g in my_growths:
+        for g in self.growth_stats:
+            if g.level > self.level:
+                continue
             for attr in LEVEL_STATS:
                 setattr(self, attr, getattr(self, attr) + getattr(g, attr))
+
+        for s in self.bonus_stats:
+            if s.level > self.level:
+                continue
+            attrs = s.best_choice
+            for attr in attrs:
+                setattr(self, attr, getattr(self, attr) + getattr(s, attr))
+
+        # 255 maximum
+        for attr in LEVEL_STATS:
+            while self.get_max_stat_at_level(attr, 30) > 255:
+                ss = [s for s in self.stats if self.level < s.level
+                      and getattr(s, attr) > 0]
+                s = random.choice(ss)
+                value = getattr(s, attr)
+                s.set_stat(attr, value-1)
 
         if self.level == 1:
             self.xp = 0
         else:
             self.xp = LevelUpXPObject.get(self.level-2).xp
+
+    def get_stat_at_level(self, attr, level):
+        my_growths = [s for s in self.growth_stats
+                      if self.level < s.level <= level]
+        value = getattr(self, attr)
+        for g in my_growths:
+            value += getattr(g, attr)
+        return value
+
+    def get_max_stat_at_level(self, attr, level):
+        value = self.get_stat_at_level(attr, level)
+        my_bonuses = [s for s in self.bonus_stats
+                      if self.level < s.level <= level]
+        for b in my_bonuses:
+            value += getattr(b, attr)
+        return value
 
 
 class ItemObject(TableObject):
@@ -859,7 +920,7 @@ class StatGrowthObject(StatObject, TableObject):
                 for l in cls.every:
                     if l.character_id == c.index and l.level <= 20:
                         value += getattr(l, attr)
-                value = mutate_normal(value, maximum=999)
+                value = mutate_normal(value, maximum=255)
                 fixed_points = [(1, 0), (20, value)]
                 for _ in xrange(3):
                     dex = random.randint(1, len(fixed_points)-1)
@@ -951,6 +1012,19 @@ class StatBonusObject(StatObject, TableObject):
     @property
     def intershuffle_valid(self):
         return self.level <= 20
+
+    @property
+    def best_choice(self):
+        options = [(self.max_hp/2, ("max_hp",)),
+                   (self.attack + self.defense, ("attack", "defense")),
+                   (self.magic_attack + self.magic_defense,
+                    ("magic_attack", "magic_defense"))]
+        a, b = max(options)
+        options = [(c, d) for (c, d) in options if c == a]
+        if len(options) > 1:
+            options = [random.choice(options)]
+        a, b = options[0]
+        return b
 
     def mutate(self):
         valids = [s for s in StatBonusObject.every if s.intershuffle_valid and
@@ -1298,6 +1372,15 @@ if __name__ == "__main__":
         randomize_file_select()
         rewrite_snes_meta("SMRPG-R", VERSION, megabits=32, lorom=True)
         finish_interface()
+        attr = "max_hp"
+        for attr in ["max_hp", "attack", "magic_attack", "defense", "magic_defense"]:
+            print attr.upper()
+            print "Mar Pea Bow Gen Mal"
+            for level in [1, 5, 10, 15, 20, 30]:
+                for c in CharacterObject.every:
+                    print "{0:0>3}".format(c.get_stat_at_level(attr, level)),
+                print
+            print
         import pdb; pdb.set_trace()
     except Exception, e:
         print "ERROR: %s" % e
