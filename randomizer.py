@@ -810,6 +810,9 @@ class ItemObject(TableObject):
             # mario must equip tutorial hammer
             self.set_bit("mario", True)
 
+        if self.index in [0xa5, 0xa7, 0xa9, 0xaa, 0xab]:
+            self.set_bit("single_enemy", True)
+
 
 class ItemNameObject(TableObject): pass
 class PriceObject(TableObject): pass
