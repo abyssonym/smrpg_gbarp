@@ -1130,7 +1130,7 @@ class ShopObject(TableObject):
             16: lambda i: i.is_consumable,
             18: lambda i: i.is_consumable,
             19: lambda i: i.is_equipment,
-            20: lambda i: special_conditions[12](i),
+            20: lambda i: special_conditions[8](i),
             24: lambda i: i.is_consumable,
             }
         done_already = set([])
@@ -1152,7 +1152,7 @@ class ShopObject(TableObject):
                         and not i.get_bit("all")
                         and (i.misc_attack in [1, 2, 4] or
                              i.get_bit("status_nullification")))]
-            if temp and p not in [12, 13, 14]:
+            if temp and p not in [12, 13, 14, 20]:
                 valid_items = temp
                 extras = [i for i in valid_items if i not in temp]
                 extras = random.sample(extras,
@@ -1161,7 +1161,7 @@ class ShopObject(TableObject):
                                      key=lambda i: i.rank)
             assert valid_items
             num_items = min(num_items, len(valid_items))
-            if len(valid_items) > num_items:
+            if p != 20 and len(valid_items) > num_items:
                 valid_items = valid_items[:random.randint(
                     num_items, random.randint(num_items, len(valid_items)))]
                 consumables = [i for i in valid_items if i.is_consumable]
@@ -1214,6 +1214,8 @@ class ShopObject(TableObject):
             final = [0xFF] * 15
             final[:len(items)] = sorted([i.index for i in items])
             ShopObject.get(p).items = final
+
+        ShopObject.get(20).set_bit("discount50", True)
 
 
     def cleanup(self):
