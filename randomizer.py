@@ -275,7 +275,12 @@ class MonsterRewardObject(TableObject):
 
     @classproperty
     def after_order(self):
-        return [ShopObject, MonsterObject]
+        objs = []
+        if 'p' in get_flags():
+            objs.append(ShopObject)
+        if 'm' in get_flags():
+            objs.append(MonsterObject)
+        return objs
 
     def __repr__(self):
         return "%s %s %s %s %s %s" % (
@@ -322,6 +327,8 @@ class MonsterRewardObject(TableObject):
 
 
 class PackObject(TableObject):
+    flag = 'f'
+
     @classproperty
     def after_order(self):
         return [FormationObject]
@@ -1120,7 +1127,9 @@ class ShopObject(TableObject):
 
     @classproperty
     def after_order(self):
-        return [ItemObject]
+        if 'q' in get_flags():
+            return [ItemObject]
+        return []
 
     @property
     def uses_frog_coins(self):
