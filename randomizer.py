@@ -1,4 +1,4 @@
-from randomtools.tablereader import TableObject, get_global_label
+from randomtools.tablereader import TableObject, get_global_label, tblpath
 from randomtools.utils import (
     classproperty, mutate_normal, shuffle_bits,
     utilrandom as random)
@@ -13,6 +13,13 @@ VERSION = 1
 ALL_OBJECTS = None
 LEVEL_STATS = ["max_hp", "attack", "defense", "magic_attack", "magic_defense"]
 EQUIP_STATS = ["speed", "attack", "defense", "magic_attack", "magic_defense"]
+
+
+ITEM_ORDER_FILENAME = path.join(tblpath, "item_order.txt")
+iof = open(ITEM_ORDER_FILENAME)
+ITEM_ORDER = [int(line.strip(), 0x10) for line in iof.readlines()
+              if line.strip()]
+iof.close()
 
 
 class CharIndexObject:
@@ -1296,7 +1303,8 @@ class ShopObject(TableObject):
                 repriced.add(item)
         for p, items in assignments.items():
             final = [0xFF] * 15
-            final[:len(items)] = sorted([i.index for i in items])
+            items = sorted(items, key=lambda i: ITEM_ORDER.index(i.index))
+            final[:len(items)] = [i.index for i in items]
             ShopObject.get(p).items = final
 
         ShopObject.get(20).set_bit("discount50", True)
