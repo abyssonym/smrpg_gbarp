@@ -1381,8 +1381,8 @@ def randomize_file_select():
 
 if __name__ == "__main__":
     try:
-        print ('You are using the Super Mario RPG '
-               'randomizer version %s.' % VERSION)
+        print ('You are using the Super Mario RPG "Gentle Beauty and Raw '
+               'Power" randomizer version %s.' % VERSION)
         ALL_OBJECTS = [g for g in globals().values()
                        if isinstance(g, type) and issubclass(g, TableObject)
                        and g not in [TableObject]]
@@ -1394,16 +1394,6 @@ if __name__ == "__main__":
         randomize_file_select()
         rewrite_snes_meta("SMRPG-R", VERSION, megabits=32, lorom=True)
         finish_interface()
-        attr = "max_hp"
-        for attr in ["max_hp", "attack", "magic_attack", "defense", "magic_defense"]:
-            print attr.upper()
-            print "Mar Pea Bow Gen Mal"
-            for level in [1, 5, 10, 15, 20, 30]:
-                for c in CharacterObject.every:
-                    print "{0:0>3}".format(c.get_stat_at_level(attr, level)),
-                print
-            print
-        import pdb; pdb.set_trace()
     except Exception, e:
         print "ERROR: %s" % e
         raw_input("Press Enter to close this program.")
