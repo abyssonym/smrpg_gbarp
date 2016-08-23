@@ -1121,11 +1121,11 @@ class ShopObject(TableObject):
         juice_bar_partial = [9, 10, 11]  # full: 12
         special_conditions = {
             0: lambda i: i.is_consumable or (
-                i.is_equipment and i.equippable & 0xb10001),
+                i.is_equipment and i.equippable & 0b10001),
             1: lambda i: i.is_consumable,
             2: lambda i: i.is_equipment and i.equippable & 0b11001,
             4: lambda i: i.is_consumable or (
-                i.is_equipment and i.equippable & 0xb11001),
+                i.is_equipment and i.equippable & 0b11001),
             8: lambda i: i.is_consumable and (
                 (i.misc_attack not in [1, 2, 4, 5] and not
                     i.get_bit("status_nullification")) or i.get_bit("all")),
@@ -1232,7 +1232,7 @@ class ShopObject(TableObject):
                 if i == 0xFF:
                     continue
                 i = ItemObject.get(i)
-                assert 2 <= i.price <= 999
+                assert 1 <= i.price <= 999
             if p.index in [3, 6]:
                 continue
             assert not set(p.items) & frog_items
