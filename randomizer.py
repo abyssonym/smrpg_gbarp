@@ -566,6 +566,9 @@ class CharacterObject(TableObject):
 
     def cleanup(self):
         self.current_hp = self.max_hp
+        self.weapon = 0xFF
+        self.armor = 0xFF
+        self.accessory = 0xFF
 
         my_learned = [l for l in LearnObject.every if l.level <= self.level
                       and l.character_id == self.index]
