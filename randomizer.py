@@ -586,10 +586,10 @@ class CharacterObject(TableObject):
 
 
 class ItemObject(TableObject):
-    flag = "i"
-    flag_description = "item stats and equippability"
+    flag = "q"
+    flag_description = "equipment stats and equippability"
     banned_indexes = ([0, 1, 2, 3, 4, 0x24, 0x47, 0x48, 0x49, 0x5f, 0x8b,
-                       0x95, 0xa0] + range(0xb1, 0x100))
+                       0x95, 0xa0, 0xa4] + range(0xb1, 0x100))
 
     @classmethod
     def classify_rare(cls):
@@ -635,6 +635,8 @@ class ItemObject(TableObject):
             self._rank = rank
         elif self.rare and self.is_armor:
             self._rank = price * 3
+        elif self.index == 0x5e:  # quartz charm
+            self._rank = 999
         elif self.rare and self.is_accessory:
             self._rank = price * 2
         else:
@@ -652,10 +654,36 @@ class ItemObject(TableObject):
 
     @property
     def is_frog_coin_item(self):
+        if hasattr(self, "_is_frog_coin_item"):
+            return self._is_frog_coin_item
         for p in ShopObject.every:
             if self.index in p.items:
-                return p.uses_frog_coins
-        return None
+                self._is_frog_coin_item = p.uses_frog_coins
+                break
+        else:
+            self._is_frog_coin_item = False
+        return self.is_frog_coin_item
+
+    def become_frog_coin_item(self):
+        if self.is_frog_coin_item:
+            return False
+        factor = float(random.randint(random.randint(10, 50), 50))
+        if self.rare:
+            price = int(round(self.rank / factor))
+        else:
+            price = int(round(self.price / factor))
+        PriceObject.get(self.index).price = min(max(price, 1), 50)
+        self._is_frog_coin_item = True
+        return True
+
+    def unbecome_frog_coin_item(self):
+        if not self.is_frog_coin_item:
+            return False
+        factor = float(random.randint(50, random.randint(50, 100)))
+        price = int(round(self.price * factor))
+        PriceObject.get(self.index).price = min(price, 1998)
+        self._is_frog_coin_item = False
+        return True
 
     @property
     def banned(self):
@@ -720,9 +748,6 @@ class ItemObject(TableObject):
         return self.useable_itemtype & 0x20
 
     def mutate(self):
-        self.mutate_equipment()
-
-    def mutate_equipment(self):
         if not self.is_equipment:
             return
         score = self.stat_point_value
@@ -998,9 +1023,23 @@ class WeaponTimingObject(TableObject): pass
 
 
 class ShopObject(TableObject):
+    flag = "p"
+    flag_description = "shops"
+
+    @classproperty
+    def after_order(self):
+        return [ItemObject]
+
     @property
     def uses_frog_coins(self):
         return self.get_bit("frog_coins") or self.get_bit("frog_coins_limited")
+
+    @property
+    def rank(self):
+        maxprice = max([PriceObject.get(i).price for i in self.items])
+        if self.uses_frog_coins:
+            maxprice += 2000
+        return maxprice
 
     @property
     def is_juice_bar(self):
@@ -1012,8 +1051,183 @@ class ShopObject(TableObject):
         for i in self.items:
             if i == 0xFF:
                 continue
-            s += "%s\n" % ItemObject.get(i).name.strip()
+            i = ItemObject.get(i)
+            s += "%s %s\n" % (i.name, i.price)
         return s.strip()
+
+    @classmethod
+    def full_randomize(cls):
+        # fix debug bombs before this
+        if hasattr(cls, "after_order"):
+            for cls2 in cls.after_order:
+                if not (hasattr(cls2, "randomized") and cls2.randomized):
+                    raise Exception("Randomize order violated.")
+        cls.randomized = True
+
+        assignments = {}
+
+        # phase 1: frog coin shops
+        frog_candidates = [i for i in ItemObject.every if i.price and
+            (i.rare or i.is_consumable or i.is_accessory) and not i.banned]
+        frog_not_rare = [i for i in frog_candidates if not i.rare]
+        unfrog = random.randint(
+            random.randint(0, len(frog_not_rare)), len(frog_not_rare))
+        unfrog = random.sample(frog_not_rare, unfrog)
+        for i in sorted(unfrog, key=lambda i2: i2.index):
+            frog_candidates.remove(i)
+        frog_chosen = random.sample(frog_candidates, 30)
+        disciple_shop = 3
+        frog_coin_emporium = 6
+        one_only = [i for i in frog_chosen if
+            (i.is_equipment and bin(i.equippable).count("1") == 1) or
+            (i.is_consumable and i.reuseable)]
+        num_choose = min(15, len(one_only))
+        num_choose = random.randint(random.randint(0, num_choose), num_choose)
+        chosen = random.sample(one_only, num_choose)
+        choose_again = [i for i in frog_chosen if i not in chosen and (
+            i in one_only or i.is_equipment)]
+        num_choose = 15 - len(chosen)
+        num_choose = random.randint(random.randint(0, num_choose), num_choose)
+        if num_choose and choose_again:
+            chosen += random.sample(choose_again, num_choose)
+        num_choose = 15 - len(chosen)
+        if num_choose:
+            choose_again = [i for i in frog_chosen if i not in chosen]
+            random.shuffle(choose_again)
+            chosen += choose_again[:num_choose]
+        assert len(chosen) == 15
+        assignments[disciple_shop] = chosen
+        assignments[frog_coin_emporium] = [
+            i for i in frog_chosen if i not in chosen]
+
+        # phase 2: non-frog coin shops
+        carryover = [i for i in frog_candidates if
+                     i not in assignments[disciple_shop] and
+                     i not in assignments[frog_coin_emporium]]
+        random.shuffle(carryover)
+        num_choose = random.randint(0, random.randint(0, len(carryover)))
+        carryover = carryover[:num_choose]
+        shop_items = carryover + [i for i in ItemObject.every if
+                i not in assignments[disciple_shop] and
+                i not in assignments[frog_coin_emporium] and
+                not i.banned and not i.rare]
+        shop_items = sorted(set(shop_items), key=lambda i: i.rank)
+        juice_bar_partial = [9, 10, 11]  # full: 12
+        special_conditions = {
+            0: lambda i: i.is_consumable or (
+                i.is_equipment and i.equippable & 0xb10001),
+            1: lambda i: i.is_consumable,
+            2: lambda i: i.is_equipment and i.equippable & 0b11001,
+            4: lambda i: i.is_consumable or (
+                i.is_equipment and i.equippable & 0xb11001),
+            8: lambda i: i.is_consumable and (
+                (i.misc_attack not in [1, 2, 4, 5] and not
+                    i.get_bit("status_nullification")) or i.get_bit("all")),
+            12: lambda i: special_conditions[8](i) and not i.reuseable,
+            13: lambda i: i.is_weapon,
+            14: lambda i: i.is_armor,
+            15: lambda i: i.is_accessory,
+            16: lambda i: i.is_consumable,
+            18: lambda i: i.is_consumable,
+            19: lambda i: i.is_equipment,
+            20: lambda i: special_conditions[12](i),
+            24: lambda i: i.is_consumable,
+            }
+        done_already = set([])
+        for p in range(25):
+            if p in juice_bar_partial + [disciple_shop, frog_coin_emporium]:
+                continue
+            shop = ShopObject.get(p)
+            if p == 12:
+                num_items = 15
+            else:
+                num_items = len([i for i in shop.items if i != 0xFF])
+                num_items = mutate_normal(num_items, minimum=1, maximum=15)
+            valid_items = list(shop_items)
+            if p in special_conditions:
+                valid_items = [i for i in valid_items
+                               if special_conditions[p](i)]
+            temp = [i for i in valid_items if i not in done_already or
+                    (i.is_consumable and not i.reuseable and not i.rare
+                        and not i.get_bit("all")
+                        and (i.misc_attack in [1, 2, 4] or
+                             i.get_bit("status_nullification")))]
+            if temp and p not in [12, 13, 14]:
+                valid_items = temp
+                extras = [i for i in valid_items if i not in temp]
+                extras = random.sample(extras,
+                    random.randint(0, len(extras)))
+                valid_items = sorted(set(valid_items + extras),
+                                     key=lambda i: i.rank)
+            assert valid_items
+            num_items = min(num_items, len(valid_items))
+            if len(valid_items) > num_items:
+                valid_items = valid_items[:random.randint(
+                    num_items, random.randint(num_items, len(valid_items)))]
+                consumables = [i for i in valid_items if i.is_consumable]
+                others = [i for i in valid_items if i not in consumables]
+                if consumables and others and num_items >= 4:
+                    num_con = (random.randint(0, num_items) +
+                               random.randint(0, num_items)) / 2
+                    num_con = max(num_con, num_items-num_con)
+                    num_con = min(num_con, num_items-2)
+                    num_oth = num_items-num_con
+                    num_con = min(num_con, len(consumables))
+                    num_oth = min(num_oth, len(others))
+                    valid_items = (random.sample(consumables, num_con) +
+                                   random.sample(others, num_oth))
+                    num_items = num_con + num_oth
+            chosen_items = random.sample(valid_items, num_items)
+            assignments[p] = chosen_items
+            for i in chosen_items:
+                done_already.add(i)
+
+        # phase 2.5: juice bar
+        for n, p in enumerate(sorted(juice_bar_partial, reverse=True)):
+            n = len(juice_bar_partial) - n
+            previous_items = assignments[p+1]
+            minimum = n
+            maximum = len(previous_items)-1
+            average = (minimum + maximum) / 2
+            num_items = random.randint(
+                random.randint(minimum, average), maximum)
+            chosen_items = random.sample(previous_items, num_items)
+            assignments[p] = chosen_items
+
+        # phase 3: repricing
+        repriced = set([])
+        for p, items in assignments.items():
+            for item in items:
+                if item in repriced:
+                    continue
+                if p in [disciple_shop, frog_coin_emporium]:
+                    item.become_frog_coin_item()
+                else:
+                    if not item.unbecome_frog_coin_item() and item.rare:
+                        PriceObject.get(item.index).price = max(
+                            item.price, int(item.rank))
+                price = min(999, max(2, item.price))
+                price = mutate_normal(price, minimum=2, maximum=999)
+                PriceObject.get(item.index).price = price
+                repriced.add(item)
+        for p, items in assignments.items():
+            final = [0xFF] * 15
+            final[:len(items)] = sorted([i.index for i in items])
+            ShopObject.get(p).items = final
+
+
+    def cleanup(self):
+        frog_items = set([i.index for i in ItemObject.every
+                          if i.is_frog_coin_item])
+        for p in ShopObject.every:
+            for i in p.items:
+                if i == 0xFF:
+                    continue
+                i = ItemObject.get(i)
+                assert 2 <= i.price <= 999
+            if p.index in [3, 6]:
+                continue
+            assert not set(p.items) & frog_items
 
 
 class FlowerBonusObject(TableObject):
@@ -1077,6 +1291,6 @@ if __name__ == "__main__":
         rewrite_snes_meta("SMRPG-R", VERSION, megabits=32, lorom=True)
         finish_interface()
         import pdb; pdb.set_trace()
-    except ValueError, e:
+    except Exception, e:
         print "ERROR: %s" % e
         raw_input("Press Enter to close this program.")
