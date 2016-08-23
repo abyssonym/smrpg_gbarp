@@ -364,7 +364,7 @@ class PackObject(TableObject):
 
 class FormationObject(TableObject):
     flag = "f"
-    flag_description = "formations"
+    flag_description = "enemy formations"
 
     def __repr__(self):
         present = bin(self.enemies_present)[2:]
@@ -1051,6 +1051,7 @@ class StatBonusObject(StatObject, TableObject):
 
 class SpellObject(TableObject):
     flag = "s"
+    flag_description = "character spell stats"
     mutate_attributes = {
             "fp": (1, 99),
             "power": None,
@@ -1069,8 +1070,8 @@ class SpellNameObject(TableObject): pass
 
 
 class LearnObject(CharIndexObject, TableObject):
-    flag = "s"
-    flag_description = "character spells"
+    flag = "z"
+    flag_description = "character spell lists"
 
     @property
     def rank(self):
