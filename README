@@ -13,6 +13,7 @@ Source rom file:
     This randomizer requires either the North American or Japanese versions of the Super Mario RPG rom for SNES. Note that some minor aesthetic features are not implemented in the Japanese version. Here are the hashes that were used for testing:
     MD5 - d0b68d68d9efc0558242f5476d1c5b81 (NA)
           59483feb9eb20207e3241e005fbdde7e (J)
+    By the way, this randomizer WILL NOT WORK on flashcarts. SMRPG has an SA1 chip in the game cart and is not supported by flashcarts.
 
 Flags:
     Input the following flags to customize your randomization experience.
