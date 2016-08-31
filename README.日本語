@@ -1,4 +1,4 @@
-クロノ・トリガー ランダマイザ
+スーパーマリオRPG ランダマイザ
 バージョン: 1
 日: August 23, 2016
 ダウンロード:
@@ -8,7 +8,7 @@
     https://www.twitch.tv/abyssonym
 
 SMRPGのROMイメージが必要です。正しいROMはこのハッシュです。日本語版です。
-    MD5 - 59483feb9eb20207e3241e005fbdde7e (J)
+    MD5 - 59483feb9eb20207e3241e005fbdde7e
 
 オプション
     c  キャラのステータス
@@ -28,6 +28,8 @@ SMRPGのROMイメージが必要です。正しいROMはこのハッシュです
             https://github.com/abyssonym/eternalnightmare/archive/master.zip
         ファイナルファンタジーUSA ミスティッククエスト
             https://github.com/abyssonym/terriblesecret/archive/master.zip
+        ファイナルファンタジーV
+            https://github.com/abyssonym/grand_cross/archive/master.zip
     日本語版は互換性ない
         ファイナルファンタジーVI
             https://github.com/abyssonym/beyondchaos/archive/master.zip
