@@ -933,7 +933,10 @@ class LevelUpXPObject(TableObject):
         xps = sorted([mutate_normal(l.xp, minimum=1, maximum=65535)
                       for l in cls.every])
         prev = 0
-        for l, xp in zip(cls.every, xps):
+        assert len(cls.every) == len(xps)
+        for i, (l, xp) in enumerate(zip(cls.every, xps)):
+            factor = min(i / (len(xps)/2.0), 1.0)
+            xp = int(round((xp + (xp * factor))/2))
             while xp <= prev:
                 xp += 1
             l.xp = xp
