@@ -97,7 +97,7 @@ class MonsterObject(TableObject):
         "magic_evade": None
         }
     intershuffle_attributes = [
-            "hp", "speed", "attack", "defense", "magic_attack",
+            "hp", "speed", "defense",
             "magic_defense", "evade", "magic_evade", "resistances",
             "immunities", "weaknesses_approach",
             #"coin_anim_entrance", (floating + random coordinates = freeze?)
