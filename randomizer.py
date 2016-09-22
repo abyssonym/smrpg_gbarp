@@ -692,6 +692,14 @@ class ItemObject(TableObject):
     flag_description = "equipment stats and equippability"
     banned_indexes = ([0, 1, 2, 3, 4, 0x24, 0x47, 0x48, 0x49, 0x5f, 0x8b,
                        0x95, 0xa0, 0xa4] + range(0xb1, 0x100))
+    equip_restricted = [0xe, 0xf, 0x15, 0x1d]
+    ''' KNOWN FREEZES
+    geno - 0xe super hammer (worked with mallow)
+    mario - 0xf handgun
+    mallow - 0xf handgun
+    mario - 0x15 double punch (worked with mallow)
+    geno - 0x1d super slap (worked with mario)
+    '''
 
     @classmethod
     def classify_rare(cls):
@@ -902,10 +910,11 @@ class ItemObject(TableObject):
             if value:
                 setattr(self, attr, 256 - value)
 
-        self.equippable &= 0xE0
-        num_equippable = random.randint(1,random.randint(1, 5))
-        for _ in xrange(num_equippable):
-            self.equippable |= (1 << random.randint(0, 4))
+        if self.index not in self.equip_restricted:
+            self.equippable &= 0xE0
+            num_equippable = random.randint(1,random.randint(1, 5))
+            for _ in xrange(num_equippable):
+                self.equippable |= (1 << random.randint(0, 4))
 
     def cleanup(self):
         if self.index == 5:
