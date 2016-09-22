@@ -102,9 +102,9 @@ class MonsterObject(TableObject):
             "immunities", "weaknesses_approach",
             #"coin_anim_entrance", (floating + random coordinates = freeze?)
         ]
-    banned_indexes = [0x4e, 0x61, 0x81, 0x82, 0x83, 0x84, 0x85, 0x8d,
-        0x8e, 0xa0, 0xab, 0xb4, 0xb7, 0xb9, 0xba, 0xc9, 0xd6, 0xe7, 0xe8,
-        0xf2, 0xf7, 0xfa]
+    banned_indexes = [0x4e, 0x61, 0x81, 0x82, 0x83, 0x84, 0x85, 0x8d, 0x8e,
+        0xa0, 0xab, 0xac, 0xad, 0xae, 0xaf, 0xb4, 0xb7, 0xb9, 0xba, 0xc9,
+        0xd6, 0xe7, 0xe8, 0xf2, 0xf7, 0xfa]
 
     def get_similar(self):
         if self.is_boss:
@@ -112,6 +112,20 @@ class MonsterObject(TableObject):
         candidates = [m for m in MonsterObject.ranked
                       if not m.is_boss]
         return super(MonsterObject, self).get_similar(candidates)
+
+    @property
+    def in_a_formation(self):
+        if hasattr(self, "_in_a_formation"):
+            return self._in_a_formation
+
+        for e in MonsterObject.every:
+            e._in_a_formation = False
+        for p in PackObject.every:
+            for f in p.formations:
+                for e in f.enemies:
+                    e._in_a_formation = True
+
+        return self.in_a_formation
 
     @property
     def banned(self):
