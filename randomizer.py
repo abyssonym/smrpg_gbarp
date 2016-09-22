@@ -273,14 +273,14 @@ class MonsterAttackObject(TableObject):
 
 class MonsterRewardObject(TableObject):
     flag = "d"
-    mutate_attributes = {"xp": (0, 65535),
+    mutate_attributes = {"xp": (1, 65535),
                          "coins": (0, 255),
                          }
     intershuffle_attributes = ["xp", "coins", "drop", "rare_drop"]
 
     @property
     def intershuffle_valid(self):
-        return self.monster.intershuffle_valid and (
+        return self.monster.intershuffle_valid and self.xp > 0 and (
             self.drop != self.rare_drop or self.drop == 0xFF)
 
     @property
@@ -318,7 +318,12 @@ class MonsterRewardObject(TableObject):
         return ItemObject.get(self.yoshi_cookie)
 
     def mutate(self):
+        oldxp = self.xp
         super(MonsterRewardObject, self).mutate()
+        if self.monster.is_boss:
+            self.xp = min(oldxp, self.xp)
+        else:
+            self.xp = max(oldxp, self.xp)
         consumables = [i for i in ItemObject.every
                        if i.is_consumable and not i.reuseable and not i.banned]
         if self.drop == self.rare_drop:
