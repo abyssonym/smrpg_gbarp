@@ -1216,11 +1216,13 @@ class ShopObject(TableObject):
             (i.is_consumable and i.reuseable)]
         num_choose = min(15, len(one_only))
         num_choose = random.randint(random.randint(0, num_choose), num_choose)
+        num_choose = min(num_choose, len(one_only))
         chosen = random.sample(one_only, num_choose)
         choose_again = [i for i in frog_chosen if i not in chosen and (
             i in one_only or i.is_equipment)]
         num_choose = 15 - len(chosen)
         num_choose = random.randint(random.randint(0, num_choose), num_choose)
+        num_choose = min(num_choose, len(choose_again))
         if num_choose and choose_again:
             chosen += random.sample(choose_again, num_choose)
         num_choose = 15 - len(chosen)
