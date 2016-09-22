@@ -262,13 +262,9 @@ class MonsterAttackObject(TableObject):
             i = random.randint(0, 6)
             if i != 4 or random.randint(1, 10) == 10:
                 self.ailments = (0 | 1 << i)
-        if self.buffs and random.choice([True, False, False]):
-            self.buffs = 0
-            while True:
-                self.buffs |= random.randint(1, 0xF) << 3
-                if random.choice([True, False]):
-                    break
-
+        if self.buffs and random.choice([True, False]):
+            self.buffs |= random.randint(1, 0xF) << 3
+            self.buffs |= 1 << random.randint(3, 6)
         super(MonsterAttackObject, self).mutate()
 
 
