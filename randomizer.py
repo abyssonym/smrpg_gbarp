@@ -523,7 +523,7 @@ class FormationObject(TableObject):
             self.meta.misc |= (value << 2)
 
     def mutate(self):
-        MAX_ENEMIES = 8
+        MAX_ENEMIES = 6
         if self.bosses or self.enemies_hidden or not self.enemies_present:
             return
         candidates = list(self.leaders)
