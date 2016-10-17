@@ -235,10 +235,19 @@ class MonsterAttackObject(TableObject):
     flag = "m"
     mutate_attributes = {"hitrate": (1, 100)}
     intershuffle_attributes = ["hitrate", "ailments"]
+    restricted_indexes = [
+        98,             # terrapin
+        100,            # bowser
+        3, 16, 124,     # goomba
+        3, 96,          # hammer bro
+        14, 25,         # croco 1
+        13,             # shyster & mack
+        1, 41, 44,      # belome 1
+        ]
 
     @property
     def intershuffle_valid(self):
-        return self.ailments
+        return self.ailments and self.index not in self.restricted_indexes
 
     @property
     def no_damage(self):
@@ -253,6 +262,8 @@ class MonsterAttackObject(TableObject):
         return self.misc_multiplier & 0x20
 
     def mutate(self):
+        if self.index in self.restricted_indexes:
+            return
         if self.multiplier <= 7 and not self.buffs:
             new_multiplier = random.randint(0, random.randint(
                 0, random.randint(0, 8)))
