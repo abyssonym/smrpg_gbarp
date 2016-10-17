@@ -269,12 +269,11 @@ class MonsterAttackObject(TableObject):
                 0, random.randint(0, 8)))
             if new_multiplier > self.multiplier:
                 self.misc_multiplier = new_multiplier
-        if not self.buffs and random.randint(1, 4) == 4:
+        if not self.buffs and random.randint(1, 5) == 5:
             i = random.randint(0, 6)
             if i != 4 or random.randint(1, 10) == 10:
                 self.ailments = (0 | 1 << i)
         if self.buffs and random.choice([True, False]):
-            self.buffs |= random.randint(1, 0xF) << 3
             self.buffs |= 1 << random.randint(3, 6)
         super(MonsterAttackObject, self).mutate()
 
