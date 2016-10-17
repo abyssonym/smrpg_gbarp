@@ -337,7 +337,8 @@ class MonsterRewardObject(TableObject):
     def randomize(self):
         if self.monster.morph_chance and not self.monster.banned:
             self.yoshi_cookie = random.choice(
-                [i for i in ItemObject.every if not i.banned]).index
+                [i for i in ItemObject.every
+                 if i.is_consumable and not i.banned]).index
         else:
             self.yoshi_cookie = 0xFF
 
