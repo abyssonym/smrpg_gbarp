@@ -266,7 +266,7 @@ class MonsterAttackObject(TableObject):
             return
         if self.multiplier <= 7 and not self.buffs:
             new_multiplier = random.randint(0, random.randint(
-                0, random.randint(0, 8)))
+                0, random.randint(0, random.randint(0, 8))))
             if new_multiplier > self.multiplier:
                 self.misc_multiplier = new_multiplier
         if not self.buffs and random.randint(1, 5) == 5:
