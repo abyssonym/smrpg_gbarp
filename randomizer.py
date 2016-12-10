@@ -1226,29 +1226,29 @@ class ShopObject(TableObject):
         unfrog = random.sample(frog_not_rare, unfrog)
         for i in sorted(unfrog, key=lambda i2: i2.index):
             frog_candidates.remove(i)
-        frog_chosen = random.sample(frog_candidates, 30)
+        frog_chosen = random.sample(frog_candidates, 25)
         disciple_shop = 3
         frog_coin_emporium = 6
         one_only = [i for i in frog_chosen if
             (i.is_equipment and bin(i.equippable).count("1") == 1) or
             (i.is_consumable and i.reuseable)]
-        num_choose = min(15, len(one_only))
+        num_choose = min(10, len(one_only))
         num_choose = random.randint(random.randint(0, num_choose), num_choose)
         num_choose = min(num_choose, len(one_only))
         chosen = random.sample(one_only, num_choose)
         choose_again = [i for i in frog_chosen if i not in chosen and (
             i in one_only or i.is_equipment)]
-        num_choose = 15 - len(chosen)
+        num_choose = 10 - len(chosen)
         num_choose = random.randint(random.randint(0, num_choose), num_choose)
         num_choose = min(num_choose, len(choose_again))
         if num_choose and choose_again:
             chosen += random.sample(choose_again, num_choose)
-        num_choose = 15 - len(chosen)
+        num_choose = 10 - len(chosen)
         if num_choose:
             choose_again = [i for i in frog_chosen if i not in chosen]
             random.shuffle(choose_again)
             chosen += choose_again[:num_choose]
-        assert len(chosen) == 15
+        assert len(chosen) == 10
         assignments[disciple_shop] = chosen
         assignments[frog_coin_emporium] = [
             i for i in frog_chosen if i not in chosen]
