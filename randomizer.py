@@ -1411,9 +1411,12 @@ class WorldMapObject(TableObject):
 
 
 def randomize_file_select():
-    if get_global_label() != "SMRPG_NA":
+    if get_global_label() == "SMRPG_NA":
+        addresses = [0x34757, 0x3489a, 0x34ee7, 0x340aa, 0x3501e]
+    elif get_global_label() == "SMRPG_JP":
+        addresses = [0x347d7, 0x3490d, 0x34f59, 0x340fa, 0x35099]
+    else:
         return
-    addresses = [0x34757, 0x3489a, 0x34ee7, 0x340aa, 0x3501e]
     choices = {"peach": range(7, 13),
                "bowser": range(13, 19),
                "mallow": range(19, 25),
@@ -1425,6 +1428,9 @@ def randomize_file_select():
     for addr, value in zip(addresses, values):
         f.seek(addr)
         f.write(chr(value))
+
+    if get_global_label() != "SMRPG_NA":
+        return
     f.seek(0x3EF140)
     seed = str(get_seed()).center(10)
     f.write(seed)
