@@ -1143,18 +1143,22 @@ class LearnObject(CharIndexObject, TableObject):
         for c in CharacterObject.every:
             c.known_spells = 0
         spells = range(0x1b)
+        spells.remove(7)  # group hug
         random.shuffle(spells)
         supplemental = [0xFF] * 3
         spells = spells + supplemental
         charspells = defaultdict(list)
         while spells:
-            valid = [i for i in range(5) if len(charspells[i]) < 6]
+            valid = [i for i in range(5) if len(charspells[i]) < 5 or
+                     (len(charspells[i]) < 6 and i != 1)]
             chosen = random.choice(valid)
             spell = spells.pop(0)
             if spell == 0xFF:
-                valid = [s for s in range(0x1b) if s not in charspells[i]]
+                valid = [s for s in range(0x1b) if s not in charspells[i]
+                         and s != 7]  # group hug
                 spell = random.choice(valid)
             charspells[chosen].append(spell)
+        charspells[1].insert(random.randint(0, 5), 7)
         for l in LearnObject.every:
             l.spell = 0xFF
         for i in range(5):
