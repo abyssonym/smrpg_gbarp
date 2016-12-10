@@ -9,7 +9,7 @@ from collections import defaultdict
 from os import path
 
 
-VERSION = 3
+VERSION = 4
 ALL_OBJECTS = None
 LEVEL_STATS = ["max_hp", "attack", "defense", "magic_attack", "magic_defense"]
 EQUIP_STATS = ["speed", "attack", "defense", "magic_attack", "magic_defense"]
